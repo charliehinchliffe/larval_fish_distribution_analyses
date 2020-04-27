@@ -1,0 +1,657 @@
+<<<<<<< HEAD
+---
+title: "Nimo_richness_model"
+output: console
+---
+
+
+
+The notebook contains the analysis of larval fish diversity (richness), using gerneralized additive models (GAMs).
+
+
+
+load packages
+```{r}
+library(mgcv)
+library(vegan)##loading required package
+library(car)
+library(FSA)
+library(lubridate)
+library(ggplot2)
+library(pracma)
+library(visreg)
+#library(devtools)
+#install_github('gavinsimpson/gratia')
+library(gratia)
+library(DHARMa)
+
+```
+
+
+bring in data
+```{r}
+nimo.data<-read.csv("allNIMO_dist.csv", header=TRUE)
+head(nimo.data)
+str(nimo.data)
+```
+
+
+```{r}
+nimo.data$Bathy <- (abs(nimo.data$Bathy)/1000)   ### make bathymetry absolute values in km units
+summary(nimo.data$Bathy)
+
+plot(log(nimo.data$Bathy)~ nimo.data$Latitude)
+
+
+hist(nimo.data$Bathy)
+```
+
+
+
+#creating date variables#
+
+```{r}
+nimo.data$DateCaught <- as.Date(nimo.data$Date, "%d/%m/%Y")
+nimo.data$Month <- month(nimo.data$Date)
+summary(nimo.data$Month)
+nimo.data$Year <- year(nimo.data$DateCaught)
+nimo.data$Day <- day(nimo.data$DateCaught)
+summary(nimo.data$Day)
+
+nimo.data$dayofyear <- yday(nimo.data$DateCaught)
+summary(nimo.data$dayofyear)
+hist(nimo.data$dayofyear)
+```
+
+#creating Season variables
+
+```{r}
+nimo.data$Month <- as.factor(nimo.data$Month) #month as factor
+
+nimo.data$Season <- "0" #make season variable
+
+nimo.data$Season[nimo.data$Month  == "12"] <- "summer"
+nimo.data$Season[nimo.data$Month  == "1"] <- "summer"
+nimo.data$Season[nimo.data$Month  == "2"] <- "summer"
+
+nimo.data$Season[nimo.data$Month  == "3"] <- "autumn"
+nimo.data$Season[nimo.data$Month  == "4"] <- "autumn"
+nimo.data$Season[nimo.data$Month  == "5"] <- "autumn"
+
+nimo.data$Season[nimo.data$Month  == "6"] <- "winter"
+nimo.data$Season[nimo.data$Month  == "7"] <- "winter"
+nimo.data$Season[nimo.data$Month  == "8"] <- "winter"
+
+nimo.data$Season[nimo.data$Month  == "9"] <- "spring"
+nimo.data$Season[nimo.data$Month  == "10"] <- "spring"
+nimo.data$Season[nimo.data$Month  == "11"] <- "spring"
+
+nimo.data$Season <- as.factor(nimo.data$Season)
+nimo.data$Month <- as.numeric(nimo.data$Month) 
+
+
+
+```
+
+#```{r}
+nimo.data$Season <- as.factor(nimo.data$Season)
+nimo.data$Season <- factor(nimo.data$Season, ordered = TRUE, levels = c("summer", "autumn", "winter","spring"))
+summary(nimo.data$Season) 
+#```
+
+
+#creatingtime period levels
+
+
+```{r}
+nimo.data$Decade[nimo.data$Year  <= 1999] <- "1990s"
+nimo.data$Decade[nimo.data$Year  <= 2009 & nimo.data$Year > 1999] <- "2000s"
+nimo.data$Decade[nimo.data$Year  <= 2020 & nimo.data$Year > 2009] <- "2010s"
+
+nimo.data$Period[nimo.data$Year  <= 1998] <- "pre1998"
+nimo.data$Period[nimo.data$Year  >= 1999] <- "post1998"
+
+nimo.data$Decade <- as.factor(nimo.data$Decade)
+summary(nimo.data$Decade)
+
+nimo.data$Period <- as.factor(nimo.data$Period)
+summary(nimo.data$Period)
+```
+
+
+
+
+#create Region variable
+
+
+```{r}
+nimo.data$Region[nimo.data$Latitude  <= -40] <- "South"
+
+nimo.data$Region[nimo.data$Latitude  <= -35 & nimo.data$Latitude > -40] <- "Mid-South"
+
+nimo.data$Region[nimo.data$Latitude  <= -30 & nimo.data$Latitude > -35] <- "Mid-North"
+
+nimo.data$Region[nimo.data$Latitude  > -30] <- "North"
+
+nimo.data$Region <- as.factor(nimo.data$Region)
+
+```
+
+
+```{r}
+nimo.data$Region <- as.factor(nimo.data$Region)
+nimo.data$Region <- factor(nimo.data$Region, ordered = TRUE, levels = c("North", "Mid-North", "Mid-South","South"))
+summary(nimo.data$Region) 
+```
+
+
+
+```{r}
+# summary(nimo.data$Project_name)
+# summary(nimo.data$Temperature_C)
+# summary(nimo.data$Salinity)
+# summary(nimo.data$Time_local)
+# summary(nimo.data$Day_Night)
+# summary(nimo.data$Gear_depth_m)
+```
+
+#### Standardizing depth variable.
+
+```{r}
+nimo.data$stand_depth <- as.character(nimo.data$Gear_depth_m)
+```
+
+
+
+
+```{r}
+nimo.data$stand_depth <- as.character(nimo.data$Gear_depth_m)
+
+
+
+nimo.data$stand_depth[nimo.data$stand_depth  == "0-25"] <- "25" #double mid point
+
+nimo.data$stand_depth[nimo.data$stand_depth  == "0-30"] <- "30"
+
+nimo.data$stand_depth[nimo.data$stand_depth  == "0-35"] <- "35"
+
+nimo.data$stand_depth[nimo.data$stand_depth  == "0-40"] <- "40"
+
+nimo.data$stand_depth[nimo.data$stand_depth  == "0-50"] <- "50"
+
+nimo.data$stand_depth[nimo.data$stand_depth  == "0-80"] <- "80"
+
+nimo.data$stand_depth[nimo.data$stand_depth  == "25-50"] <- "75"
+
+nimo.data$stand_depth[nimo.data$stand_depth  == "50-75"] <- "125"
+
+nimo.data$stand_depth[nimo.data$stand_depth  == "75-100"] <- "175"
+
+
+
+nimo.data$stand_depth <- as.factor(nimo.data$stand_depth)
+
+nimo.data$stand_depth <- as.numeric(nimo.data$stand_depth)
+
+nimo.data$stand_depth <- (nimo.data$stand_depth/2)
+
+
+summary(nimo.data$stand_depth)
+```
+
+
+
+## create depth factors
+
+
+```{r}
+
+nimo.data$depth_sect[nimo.data$stand_depth  >= 0 & nimo.data$stand_depth < 11] <- "a) 0-10"
+
+nimo.data$depth_sect[nimo.data$stand_depth  >= 11 & nimo.data$stand_depth < 50] <- "b) 11-50"
+
+nimo.data$depth_sect[nimo.data$stand_depth  >= 51 & nimo.data$stand_depth < 100] <- "c) 51-100"
+
+nimo.data$depth_sect[nimo.data$stand_depth  >= 101 & nimo.data$stand_depth < 150] <- "d) 101-150"
+
+nimo.data$depth_sect[nimo.data$stand_depth  >= 151] <- "e) 151+"
+
+nimo.data$depth_sect <- as.factor(nimo.data$depth_sect)
+
+#summary(nimo.data$depth_sect)
+
+
+```
+
+
+
+
+
+### Creating diversity variables
+
+
+```{r}
+larval.spp<-nimo.data[1:3193,22:241]
+head(larval.spp)
+```
+
+
+```{r}
+richness <- rowSums(larval.spp)
+richness <- specnumber(larval.spp) # richness
+shannon <- diversity(larval.spp) #shannon wevaer index from vegan package
+J <- shannon/log(specnumber(larval.spp)) # Evenness
+shannon_effective <- exp(diversity(larval.spp))
+
+
+nimo.data$shannon <- shannon
+nimo.data$evenness <- J
+nimo.data$richness <- richness
+nimo.data$richness <- richness
+nimo.data$shannon_effective <- shannon_effective
+```
+
+
+
+```{r}
+boxplot(nimo.data$richness ~ nimo.data$depth_sect)
+
+plot(nimo.data$richness~nimo.data$Bathy)
+
+summary(nimo.data$Season)
+with(nimo.data, plot(richness ~ Bathy))
+
+
+
+plot(nimo.data$shannon ~ nimo.data$richness)
+plot(nimo.data$shannon_effective ~ nimo.data$richness)
+plot(nimo.data$shannon ~ nimo.data$shannon_effective)
+```
+
+
+
+
+
+###seperate WA and east
+```{r}
+eastcoast <- subset(nimo.data, nimo.data$Longitude >= 130)
+westcoast <- subset(nimo.data, nimo.data$Longitude <= 130)
+```
+
+
+##seperate Inshore and offshore
+```{r}
+inshore <- subset(eastcoast, eastcoast$Bathy <= .200)
+offshore <- subset(eastcoast, eastcoast$Bathy >= .200)
+```
+
+
+```{r}
+summary(eastcoast$Bathym_m)
+summary(eastcoast$Temperature_C)
+summary(eastcoast$Salinity)
+summary(eastcoast$Gear_mesh_um)
+
+```
+
+
+
+richness model selection
+
+
+
+```{r}
+eastcoast$Bathy[is.na(eastcoast$Bathy)] <- 0
+
+
+str(eastcoast$Bathy)
+```
+
+
+
+```{r}
+###testing correlation; Pearson correlation between predictors.
+
+preds <- data.frame(eastcoast$Latitude, eastcoast$HadISST, eastcoast$stand_depth, eastcoast$Bathy, eastcoast$dists_km, eastcoast$Temperature_C, eastcoast$SST)
+
+cor(preds)
+
+
+cor(eastcoast$Bathy, eastcoast$dists_km)
+```
+
+
+
+
+
+```{r, eval = FALSE}
+new <- subset(eastcoast, eastcoast$Project_name == "Investigator_14")
+
+new$Season
+new$Bathy
+new$stand_depth
+new$Latitude
+new$Volume_m3
+
+#Season +  exp(-Bathy)  + s(stand_depth, bs =  "cr", k = 5) + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re")
+
+
+print(is.na(eastcoast)
+      
+
+
+      
+eastcoast$find_na <- ""
+                  
+      
+eastcoast$find_na[is.na(eastcoast$Bathy) == "TRUE"] <- "missing"  
+eastcoast$find_na[is.na(eastcoast$Season) == "TRUE"] <- "missing"  
+eastcoast$find_na[is.na(eastcoast$stand_depth) == "TRUE"] <- "missing"  
+eastcoast$find_na[is.na(eastcoast$Latitude) == "TRUE"] <- "missing"  
+eastcoast$find_na[is.na(eastcoast$Volume_m3) == "TRUE"] <- "missing"  
+eastcoast$find_na[is.na(eastcoast$Project_name) == "TRUE"] <- "missing"  
+
+as.factor(eastcoast$find_na)
+
+print[eastcoast$find_na == "missing"]
+```
+
+
+
+```{r}
+eastcoast$richness
+```
+
+
+
+
+```{r}
+#model selection
+
+# step 1) Full model
+model1 <-  gam(richness ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+
+
+concurvity(model1, full=T) #checking concurvity
+
+# step 2)  s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  removed due to concurvity
+model2 <-  gam(richness ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+
+
+# Step 3) Period removed based on AIC score, checked with chi-sq test
+model2i <-  gam(richness ~  Season  +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+
+AIC(model2,model2i) ## AIC reduced with period removed
+
+anova(model2,model2i, test = "Chisq") #non sig therefore can remove period (adds nothing to model)
+
+
+
+# Step 4) linear Season term removed, but increases AIC and is sig dif in chi-sq test there retain Season in model
+model3 <-  gam(richness ~  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+
+
+AIC(model3,model2i) ## AIC increased when season removed. ## model2i best model here. 
+
+anova(model3,model2i, test = "Chisq")  #sig dif therefore dont remove season
+
+
+
+
+
+
+## therefore best model for richness appears to be model2i, removing Period based on AIC and s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5) based on concurvity.
+
+
+
+
+
+
+#Best model summary
+summary(model2i) 
+
+#checking concurvity
+concurvity(model2i,full=TRUE)
+
+#checking assumptions
+gam.check(model2i)
+
+
+par(mfcol=c(3,2))
+plot(model2i, shade = TRUE) ### spline plots
+visreg(model2i) 
+appraise(model2i)
+
+
+
+
+
+#overdisperison test
+E1 <- resid(model2i, type = "pearson")   #ok - less than 2
+N <- nrow(eastcoast)
+p <- length(coef(model2i))
+Overdispersion <- sum(E1^2) / (N - p)
+paste('Overdispersion: ',Overdispersion)
+#""Overdispersion:  1.01888080182827"
+
+  
+```
+
+
+
+
+richness model
+
+
+Checking (bs = cr) vs (bs = cs), cr is cubic regression spline and cs is cubic regression spline with shrinkage.
+
+
+AIC is lower with cr for obvious reasons - cs pushes effect size towards 0 if small.
+
+```{r}
+
+#Best model
+modelcs <- gam(richness ~  Season +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE) 
+
+
+modelcr <- gam(richness ~  Season +  exp(-Bathy) + s(stand_depth, bs =  "cr", k = 5) + s(Latitude, bs =  "fs", xt = "cr", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE) 
+# bs = cr cubic regression spline
+
+AIC(modelcs, modelcr)
+
+
+
+
+
+plot(modelcs)
+appraise(modelcs)
+
+#DHARMa won't run on model fit with mgcv using nb family
+#simulationOutput <- simulateResiduals(fittedModel = modelcs, n = 250)
+#plot(simulationOutput)
+#plotResiduals(eastcoast$Project_name, simulationOutput$scaledResiduals)
+
+
+summary(modelcs)
+
+
+
+concurvity(modelcs,full=T) ###  s(dists_km) displayed high concurvity; observed    1   0.7807189
+
+E1 <- resid(modelcs, type = "pearson")   #ok - less than 2
+N <- nrow(eastcoast)
+p <- length(coef(modelcs))
+Overdispersion <- sum(E1^2) / (N - p)
+paste('Overdispersion: ',Overdispersion)
+#"Overdispersion:  1.01888080182827"
+
+
+
+
+```
+
+
+#plotting bathy effect
+```{r}
+
+z <- evaluate_parametric_term(modelcs, "exp(-Bathy)")
+z
+
+
+pbath <- ggplot(z, aes(x = value, y = partial)) +
+  geom_line(rugs = T) +
+  geom_ribbon(data=z,aes(ymin=upper,ymax=lower),alpha=0.3) +
+  xlab("exp(-Bathy)") +
+  ylab("Partial effect of exp(-Bathy)")  +
+  geom_rug(sides ="b", color="black") +
+  theme_classic() 
+  
+
+pbath
+
+plogbath <- ggplot(z, aes(x = log(value), y = log(partial))) +
+  geom_line(rugs = T) +
+  geom_ribbon(data=z,aes(ymin=log(upper),ymax=log(lower)),alpha=0.3) +
+  xlab("Bathy") +
+  ylab("Partial effect of Bathy")  +
+  geom_rug(sides ="b", color="black") +
+  theme_classic() 
+  
+
+plogbath
+
+
+
+```
+
+
+
+
+
+
+Plotting params from model in one plot
+
+```{r}
+
+z <- evaluate_parametric_term(modelcs, "exp(-Bathy)")
+z
+
+
+pbath <- ggplot(z, aes(x = value, y = partial)) +
+  geom_line(rugs = T) +
+  geom_ribbon(data=z,aes(ymin=upper,ymax=lower),alpha=0.3) +
+  xlab("exp(-Bathy)") +
+  ylab("Partial effect of exp(-Bathy)")  +
+  geom_rug(sides ="b", color="black") +
+  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + theme(plot.margin = margin(30,20,32,24))
+  
+
+pbath
+
+
+library(gridGraphics)
+library(cowplot)
+library(ggpubr)
+
+
+
+
+
+
+
+install.packages("grid")
+install.packages("ggplotify")
+library("grid")
+library("ggplotify")
+
+
+
+p1 <- as.grob(function() plot(modelcs, shade = TRUE, select = 1))
+p1
+
+p2 <- as.grob(function() plot(modelcs, shade = TRUE, select = 2))
+p2
+
+
+p3 <- as.grob(function() plot(modelcs, shade = TRUE, select = 3))
+p3
+
+p4 <- as.grob(function() plot(modelcs, shade = TRUE, select = 4))
+p4
+
+p5 <- as.grob(function() plot(modelcs, shade = TRUE, select = 5))
+p5
+
+rich_gam_effects <- plot_grid(pbath, p1, p4, p2, p5, p3, labels = c('A', 'B', 'C', 'D', 'E', 'F'), label_size = 12, nrow = 3, ncol = 2)
+rich_gam_effects
+
+```
+
+
+
+
+
+```{r}
+8.6/7.5*20
+```
+
+
+
+
+
+#checking spatial autocorrelation of richness model
+
+Moran's I    Expected I     Z resampling   P-value resampling   Z randomization  P-value randomization
+0.01427012 -0.0003327787     3.829472       0.0001284186        3.829642            0.00012833
+
+Moran's I ≈ 0 therefore no problem with spatial autocorrelation
+
+```{r}
+library(lctools)
+
+head(eastcoast)
+
+
+res <- residuals(modelcs)
+#res
+
+
+Coords <-cbind(eastcoast$Latitude, eastcoast$Longitude)
+
+bw <- 6
+
+mI <-moransI(Coords,bw,res)
+
+moran.table <-matrix(data=NA,nrow=1,ncol=6)
+
+col.names <-c("Moran's I", "Expected I", "Z resampling", "P-value resampling","Z randomization", "P-value randomization")
+
+colnames(moran.table) <- col.names
+
+moran.table[1,1] <- mI$Morans.I
+
+moran.table[1,2] <- mI$Expected.I
+
+moran.table[1,3] <- mI$z.resampling
+
+moran.table[1,4] <- mI$p.value.resampling
+
+moran.table[1,5] <- mI$z.randomization
+
+moran.table[1,6] <- mI$p.value.randomization
+
+print(moran.table)
+
+```
+
+Looking at residuals of model against temp.
+```{r}
+reg <- lm(res ~ eastcoast$HadISST)
+plot(res ~ eastcoast$HadISST)
+abline(reg, col = "red")
+
+summary(reg)
+coefficients(reg)
+```
+
+
