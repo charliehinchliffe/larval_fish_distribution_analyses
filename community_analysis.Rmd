@@ -28,9 +28,9 @@ library(labdsv)
 
 bring in data
 ```{r}
-nimo.data<-read.csv("allNIMO_dist.csv", header=TRUE)
+nimo.data<-read.csv("all_data.csv", header=TRUE)
 head(nimo.data)
-str(nimo.data)
+
 ```
 
 
@@ -91,14 +91,9 @@ nimo.data$Month <- as.numeric(nimo.data$Month)
 
 ```
 
-#```{r}
-nimo.data$Season <- as.factor(nimo.data$Season)
-nimo.data$Season <- factor(nimo.data$Season, ordered = TRUE, levels = c("summer", "autumn", "winter","spring"))
-summary(nimo.data$Season) 
-#```
 
 
-#creatingtime period levels
+#creating time period levels
 
 
 ```{r}
@@ -153,13 +148,11 @@ summary(nimo.data$Region)
 # summary(nimo.data$Gear_depth_m)
 ```
 
-#### Standardizing depth variable.
+#### Creating mid-point depth variable.
 
 ```{r}
 nimo.data$stand_depth <- as.character(nimo.data$Gear_depth_m)
 ```
-
-
 
 
 ```{r}
@@ -224,7 +217,6 @@ nimo.data$depth_sect <- as.factor(nimo.data$depth_sect)
 
 
 
-
 ### Creating diversity variables
 
 
@@ -282,316 +274,11 @@ offshore <- subset(eastcoast, eastcoast$Bathy >= .200)
 
 
 
-```{r}
-inshore
-```
 
 
-We are running community analyses on inshore spp
 
+# Running a GLLVM model based ordination.
 
-Inshore spp by volume
-
-```{r}
-spp <- inshore[1:2428,22:239]
-spp <- (spp/inshore$Volume_m3)*1000 ## spp per 1000 m^-3
-```
-
-
-
-
-removing spp w/ sum to 0
-
-
-```{r}
-#summary(east.spp)
-h <- colSums(spp)
-h
-
-# Write CSV in R
-write.csv(h, file = "spp_sum.csv")
-z <- read.csv("spp_sum.csv", header = T)
-z <- subset(z, z$x == 0)
-z
-```
-
-```{r}
-## removing spp w/ sum to 0# from eastspp
-
-myvars <- names(spp) %in% c("Acropomatidae_Synagrops.spp_37311949", 
-                            "Aploactinidae_other_37290000",
-                            "Bothidae_Crossorhombus.spp_37460907",
-                            "Bovichtidae_Pseudaphritis.urvilli_37403003",
-                            "Callanthiidae_other_37311957",
-                            "Cepolidae_Acanthocepola.spp_37380901",
-                            "Cepolidae_Owstonia.spp_37380903",
-                            "Cepolidae_other_37380000",
-                            "Cetomimidae_37132000",
-                            "Chandidae_other_37310900",
-                            "Engraulidae_other_37086000",
-                            "Ipnopidae_37123000",
-                            "Latridae_other_37378000",
-                            "Leptobramidae_37357905",
-                            "Microcanthidae_other_37361900",
-                            "Ophidiidae_Brotula.spp_37228912",
-                            "Plesiopidae_37316000",
-                            "Terapontidae_other_37321000",
-                            "Xiphiidae_Xiphias.gladius_37442001") 
-
-spp <- spp[!myvars]
-```
-
-
-PCO analysis of inshor spp
-
-
-
-```{r}
-dist.bray <- dsvdis(sqrt(spp), "bray/curtis")
-
-bray.pco <- pco(dist.bray,k=10)
-
-barplot(bray.pco$eig)
-loadings(bray.pco)
-
-summary(bray.pco)
-
-
-plot(bray.pco)
-
-
-
-
-latitude <- inshore[1:2428, 9]
-Region <- inshore$Region
-
-#par(mfrow=c(1,3))
-
-p <- plot(bray.pco, col = -latitude)
-legend("topright",9.5, c("Latitude"), pch=c(1), col=c("black"))
-#par(mfrow=c(1,3))
-
-p <- plot(bray.pco, col = Region)
-#legend("topright",9.5, c("Latitude"), pch=c(1), col=c("black"))
-
-#p2 <- plot(bray.pco, col = Project)
-#legend("topright",9.5, c("Project"), pch=c(1), col=c("black"))
-
-#p3 <- plot(bray.pco, col = Gear)
-#legend("topright",9.5, c("Gear Type"), pch=c(1), col=c("black"))
-```
-
-
-
-
-trying to observe variance explained by eigenvalues
-```{r}
-barplot(bray.pco$eig)
-
-prop <- bray.pco$eig/sum(bray.pco$eig)
-plot(prop)
-prop
-addeig <- cumsum(bray.pco$eig / sum(bray.pco$eig))  ##proportion of eigval to sum of eigvals = %variance explained
-plot(addeig)
-
-pos <- abs(bray.pco$eig)  #looking at absolute values, ignoring negetive signs
-prop2 <- pos/sum(pos)
-addeig2 <- cumsum(pos/ sum(pos))  ## cumulative proportions of eiganvalues
-plot(prop2)
-plot(addeig2)
-
-
-prop2 <- data.frame(prop2)
-prop2
-```
-
-
-### Have to remove rare species
-
-
-
-
-#trying to remove species which occurr infrequently
-
-
-#remove species which occur in less than 5 samples
-
-```{r}
-spp.presence <- spp 
-spp.presence[spp.presence > 0] <- 1
-head(spp.presence)  ## turned presence of species into 1, absent is 0
-
-
-spp[is.na(spp.presence)] <- 0 # fill NA with 0
-species_total <- as.data.frame(colSums(spp.presence)) # dataframe of species sums eg total abundance
-names(species_total)[1] <- "Total_Presence" # rename variable 
-# summary(species_total$Total_Abundance) # observe distribution
-rare_species <- subset(species_total, Total_Presence < 11)  # Select species with <X occurence
-rare_species_names <- row.names(rare_species) # extract species names
-list(rare_species_names)
-
-# Charlies code to remove identified species
-myvars <- names(spp)  %in%  rare_species_names # not really sure what this does but it works
-comb_dat <- spp[!myvars] # drop variables identified above
-
-comb_dat
-```
-
-
-
-
-inshore species raw abundance
-```{r}
-spp.raw <-inshore[1:2428,22:239]
-
-spp.raw
-```
-
-#removing species with low total abundance
-```{r}
-spp.raw[is.na(spp.raw)] <- 0 # fill NA with 0
-species_total <- as.data.frame(colSums(spp.raw)) # dataframe of species sums eg total abundance
-names(species_total)[1] <- "Total_Abundance" # rename variable 
-summary(species_total$Total_Abundance) # observe distribution
-rare_species <- subset(species_total, Total_Abundance < 35)  # Select species with X abundance - base don distribution 35 is 1st quartile
-rare_species_names <- row.names(rare_species) # extract species names
-rare_species_names
-
-rare_species
-
-# Charlies code to remove identified species
-myvars2 <- names(spp)  %in%  rare_species_names # not really sure what this does but it works
-comb_dat <- spp[!myvars2 & !myvars] # drop variables identified above
-comb_dat
-
-```
-
-#removing tows with low catch
-
-
-```{r}
-comb_dat <- comb_dat[rowSums(comb_dat) > 5, , drop=FALSE]  # dropping tows with less than 5 ind per 1000 m ^-3
-```
-
-
-```{r}
-comb_dat <- comb_dat[colSums(comb_dat) > 0, , drop=FALSE]  # dropping tows with less than 5 ind per 1000 m ^-3
-```
-
-
-```{r}
-summary(rowSums(comb_dat))
-```
-
-
-
-
-```{r}
-head(comb_dat)
-```
-
-#transpose species matrix
-
-```{r}
-intrans <-  t(comb_dat)
-```
-
-
-```{r}
-intrans <- intrans[rowSums(intrans) > 0, , drop=FALSE]
-```
-
-
-
-Packages for cluster diagrams
-```{r}
-library(clustsig)
-library(dendextend)
-```
-
-#create distance matrix and run Hierarchical Clustering with rare species removed, shows which species occur next to each other
-```{r}
-d <- vegdist(nthroot(intrans,8), method = "bray")
-
-
-H.fit <- hclust(d, method="average")
-
-plot1 <- plot(H.fit, xlab="cluster", ylab="Height", labels = F) ##labels = Project
-
-plot2<- color_branches(H.fit, k=50, labels = TRUE) ## For colouring branches
-plot(plot2, xlab="cluster", ylab="Height")
-
-groups <- cutree(H.fit, k=50)
-clusters <- data.frame(groups)
-rect.hclust(H.fit, k=50, border="red") ## For boxing around branches
-
-groups <- as.data.frame(groups)
-groups
-
-```
-
-
-
-```{r, eval = FALSE}
-df1$var <- df2$var[match(df1$match.var,df2$match.var)]
-
-
-
-
-
-```
-
-
-
-
-```{r}
-comb_dat
-```
-
-
-
-
-
-Re-running PCO now with rare_species removed
-
-```{r}
-dist.bray <- dsvdis(sqrt(comb_dat), "bray/curtis")
-
-bray.pco <- pco(dist.bray,k=10)
-
-barplot(bray.pco$eig)
-loadings(bray.pco)
-
-summary(bray.pco)
-
-
-plot(bray.pco)   ## now i need to match the tows with the removed tows with latitudes/regions for colouring
-
-```
-
-
-
-
-
-
-
-
-
-######### Note #### I need to match up rows from comb_dat and inshore data frames to have latitudes, perhaps a Q for Daniel's niceR lab
-```{r, eval = FALSE}
-lats <- inshore$Latitude[spp == comb_dat,]
-```
-
-
-```{r, eval = FALSE}
-library(plyr)
-j <- with(join.keys(a1, a2), which(spp %in% comb_dat))
-```
-
-
-
-################## Running a GLLVM instead of PCO ## model based rather than distance based ordination.
- ###Inshore spp matrix
 
 
 ```{r}
@@ -691,97 +378,6 @@ ggplot(plot_dat,aes(x=score_1,y=score_2,col=inshore.Latitude))+
 ```
 
 
-```{r}
-
-p1<- ggplot(plot_dat,aes(x=score_1,y=score_2,col=inshore.Period))+
-  geom_point() +
-   theme(legend.position="none")
-
-
-p2 <- ggplot(plot_dat,aes(x=inshore.Latitude, y=score_1, col=inshore.Period))+
-  geom_point() 
-
-
-p3 <-  ggplot(plot_dat,aes(x=inshore.Latitude, y=score_2, col=inshore.Period))+
-  geom_point() 
-
-
-
-
-
-
-ggplot(plot_dat,aes(x=inshore.Latitude, y=score_1, col=inshore.Period))+
-  geom_point() +
-  geom_smooth(method = 'gam', formula = y~s(x))
-
-
-ggplot(plot_dat,aes(x=inshore.Latitude, y=score_2, col=inshore.Period))+
-  geom_point() +
-   geom_smooth(method = 'gam', formula = y~s(x))
-
-
-ggplot(plot_dat,aes(x=inshore.Latitude, y=score_1, col=inshore.Period))+
-  geom_point() +
-  geom_smooth(method = 'glm',  formula = y~x)
-
-
-ggplot(plot_dat,aes(x=inshore.Latitude, y=score_2, col=inshore.Period))+
-  geom_point() +
-   geom_smooth(method = 'glm', formula = y~x)
-
-
-
-
-ggplot(plot_dat,aes(x=inshore.Period, y=score_1, col=inshore.Period))+
-  geom_violin() +
-  geom_point(position = "jitter", alpha = 0.2) +
-  geom_boxplot(alpha = 0.2)
-
-ggplot(plot_dat,aes(x=inshore.Period, y=score_2, col=inshore.Period))+
-  geom_violin() +
-  geom_point(position = "jitter", alpha = 0.2) +
-  geom_boxplot(alpha = 0.2)
-  
-  #geom_smooth(method = 'glm', , formula = y~x)
-
-
-south_plot <- subset(plot_dat, plot_dat$inshore.Latitude < -40)
-north_plot <- subset(plot_dat, plot_dat$inshore.Latitude > -33)
-
-
-ggplot(south_plot,aes(x=inshore.Period, y=score_1, col=inshore.Period))+
-  geom_violin() +
-  geom_point(position = "jitter", alpha = 0.2) +
-  geom_boxplot(alpha = 0.2)
-
-ggplot(south_plot,aes(x=inshore.Period, y=score_2, col=inshore.Period))+
-  geom_violin() +
-  geom_point(position = "jitter", alpha = 0.2) +
-  geom_boxplot(alpha = 0.2)
-
-
-
-
-ggplot(north_plot,aes(x=inshore.Period, y=score_1, col=inshore.Period))+
-  geom_violin() +
-  geom_point(position = "jitter", alpha = 0.2) +
-  geom_boxplot(alpha = 0.2)
-
-ggplot(north_plot,aes(x=inshore.Period, y=score_2, col=inshore.Period))+
-  geom_violin() +
-  geom_point(position = "jitter", alpha = 0.2) +
-  geom_boxplot(alpha = 0.2)
-
-
-
-
-
-
-```
-
-
-
-
 
 
 
@@ -836,10 +432,10 @@ el_nino_plot
 plot_dat <- data.frame(score_1,score_2,inshore$Region, inshore$Latitude, inshore$HadISST, inshore$Period)
 head(plot_dat)
 
-ggplot(plot_dat,aes(x=inshore.Latitude, y=score_1, col = inshore.Period))+
+ggplot(plot_dat,aes(x=inshore.Latitude, y=score_1, col = inshore.HadISST))+
   geom_point() +
-  geom_smooth(method = "gam", formula = y~s(x, k = 5)) #+
-  #scale_color_continuous(high = "red", low = "blue")
+  geom_smooth(method = "glm") +
+  scale_color_continuous(high = "red", low = "blue")
 
 ggplot(plot_dat,aes(x=inshore.Latitude, y=score_2, col = inshore.HadISST))+
   geom_point() +
@@ -1147,7 +743,7 @@ spp.raw <-eastcoast[,22:239]
 spp.raw
 ```
 
-#removing species with low total abundance
+removing species with low total abundance
 ```{r}
 spp.raw[is.na(spp.raw)] <- 0 # fill NA with 0
 species_total <- as.data.frame(colSums(spp.raw)) # dataframe of species sums eg total abundance
@@ -1293,7 +889,7 @@ head(norm_el)
 ### looking at output from univariate test of manyglm(elements ~ HadISST, family = "negative.binomial", offset = log(Volume_m3), data=inshore) from Katana
 
 ```{r}
-Uni_test_manyglm_output <- readRDS("E:/git_projects/distribution_diversity_paper/Uni_test_manyglm_output.rds")
+Uni_test_manyglm_output <- readRDS("/Uni_test_manyglm_output.rds")
 
 Uni_test_manyglm_output
 

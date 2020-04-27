@@ -10,7 +10,7 @@ library(pracma)
 library(mvabund)
 
 #read in data
-nimo.data<-read.csv("allNIMO_dist.csv", header=TRUE)
+nimo.data<-read.csv("all_data.csv", header=TRUE)
 head(nimo.data)
 str(nimo.data)
 

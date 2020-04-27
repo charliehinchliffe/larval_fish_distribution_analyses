@@ -1,5 +1,5 @@
 ---
-title: "Nimo_abundance_model"
+title: "Abundance_model"
 output: console
 ---
 
@@ -28,7 +28,7 @@ library(gratia)
 
 bring in data
 ```{r}
-nimo.data<-read.csv("allNIMO_dist.csv", header=TRUE)
+nimo.data<-read.csv("all_data.csv", header=TRUE)
 head(nimo.data)
 str(nimo.data)
 ```
