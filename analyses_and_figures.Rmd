@@ -582,7 +582,7 @@ LAT_bivariate_plot <- ggplot(plot_dat,aes(x=score_1,y=score_2,col=inshore.Latitu
                legend.text = element_text(size = 10, face = "bold"))
 ```
 
-##Quantial regression of bivariate scores
+##Quantial regression of bivariate scores against SST
 Quantial regression of score 1 from GCGM against SST
 ```{r}
 qs <- c(0.05, 0.5, 0.95) ### What quantiles are we interested in... 5%, 50% and 95%
@@ -659,6 +659,63 @@ figure_4_plot <- plot_grid(SST_bivariate_plot, p_score1, p_score2, labels = c('A
 figure_4_plot
 ```
 
+##Univariate tests for MGLM with SST
+The univariate tests for the MGLM with SST were run on the Univeristy of New South Wales computational cluster 'Katana' supported by Research Technology Services. The r script included in the repo 'manyglm_uni_test.R' contains the analyses. Here, we import the output to observe the results.
+
+Read in rds and display output
+```{r}
+Uni_test_manyglm_output <- readRDS("Uni_test_manyglm_output.rds")
+
+#Uni_test_manyglm_output
+
+#Uni_test_manyglm_output$uni.p
+uni_p <- as.data.frame(Uni_test_manyglm_output$uni.p)
+#uni_p
+
+
+uni_ts <- as.data.frame(Uni_test_manyglm_output$uni.test)
+#uni_ts
+
+useful_output <- rbind(uni_p, uni_ts)
+#useful_output
+
+useful_output <- t(useful_output)
+
+useful_output <- as.data.frame(useful_output)
+
+sig_out <- subset(useful_output, useful_output$HadISST <= 0.05)
+
+sig_out
+
+
+
+
+sum(useful_output$HadISST1) #whole test dev
+
+useful_output$dev_exp <- (useful_output$HadISST1/sum(useful_output$HadISST1))*100
+
+useful_output
+
+library(tidyverse)
+library(dplyr)
+
+useful_output <- useful_output %>% 
+  rename(
+    P = HadISST,
+    TS = HadISST1
+    ) %>%
+  select(P, TS, dev_exp)
+
+
+
+useful_output
+
+#write.csv(useful_output, "manyglm_temp_uni.csv")
+```
+
+
+
+##Quantial regression of bivariate scores against Latitude
 Now running quantial regression of score 1 from GCGM against Latitude
 ```{r}
 qs <- c(0.05, 0.5, 0.95) ### What quantiles are we interested in... 5%, 50% and 95%
