@@ -1,17 +1,30 @@
 ---
 title: "Analyses of seasonal and latitudinal distribution of larval fish in temperate waters of south-eastern Australia"
-output: console
+author: Charles Hinchliffe
+output: 
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
 ---
-#Summary
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Summary
+
 This script contains code to reproduce the analyses and figures from Hinchliffe C et al 2020, "Seasonal and latitudinal distribution of larval fish in temperate waters of south-eastern Australia" (Link).
 
-There are 3 major analyses within the manuscipt. The first two involve analyses the seasonal and latitudinal variation in larval fish abundance and taxa richness using generalised additive mixed-models (GAMMs) and can be found in section 2) and 3) in this script. The third major analyses involves investigation of the community composition of larval fish across the study area, first in relation to Sea Surface Temperature (SST), followed by Latitude (which appears in the supplementary material of the manuscript), and can be found in section 4) of this script. The figures associated with each analysis are at the end of each section, with there figure number as they appear in the manuscript and figure caption.
+There are 3 major analyses within the manuscript. The first two involve analyses the seasonal and latitudinal variation in larval fish abundance and taxa richness using generalised additive mixed-models (GAMMs) and can be found in section 2) and 3) in this script. The third major analyses involves investigation of the community composition of larval fish across the study area, first in relation to Sea Surface Temperature (SST), followed by Latitude (which appears in the supplementary material of the manuscript), and can be found in section 4) of this script. The figures associated with each analysis are at the end of each section, with there figure number as they appear in the manuscript and figure caption.
 
-#1) Data manipulation and cleaning.
+# 1) Data manipulation and cleaning
+
 This section of the script cleans data and creates variables required for the subsequent analyses.
 
 load required packages for all analyses and figure building.
-```{r}
+```{r, warning=FALSE, message=FALSE}
 library(mgcv)
 library(vegan)##loading required package
 library(car)
@@ -46,7 +59,7 @@ library(quantreg)
 bring in data
 ```{r}
 nimo.data <- read.csv("all_data.csv", header=TRUE)
-head(nimo.data)
+#head(nimo.data)
 ```
 
 Make bathymetry absolute values in km units
@@ -186,7 +199,7 @@ larval.spp<-nimo.data[1:3193,22:241]
 
 abundance <- rowSums(larval.spp)
 richness <- specnumber(larval.spp) # richness
-shannon <- diversity(larval.spp) #shannon wevaer index from vegan package
+shannon <- diversity(larval.spp) #shannon weaver index from vegan package
 J <- shannon/log(specnumber(larval.spp)) # Evenness
 shannon_effective <- exp(diversity(larval.spp))
 
@@ -198,8 +211,8 @@ nimo.data$abundance <- abundance
 nimo.data$shannon_effective <- shannon_effective
 ```
 
-## Seperate Australian west coast and east coast
-Samples into seperate data frames  
+## Separate Australian west coast and east coast
+Samples into separate data frames  
 ```{r}
 eastcoast <- subset(nimo.data, nimo.data$Longitude >= 130)
 westcoast <- subset(nimo.data, nimo.data$Longitude <= 130)
@@ -215,8 +228,10 @@ cor.test(eastcoast$SST,eastcoast$HadISST, method = c("pearson", "kendall", "spea
 plot(x = eastcoast$SST,y = eastcoast$HadISST)
 ```
 
-##Seperate inshore and offshore
-Sites on the east coast based on position on continential shelf (boundary set at 200m bathymetry).
+## Separate inshore and offshore
+
+Sites on the east coast based on position on continental shelf (boundary set at 200m bathymetry).
+
 ```{r}
 inshore <- subset(eastcoast, eastcoast$Bathy <= .200)
 offshore <- subset(eastcoast, eastcoast$Bathy >= .200)
@@ -224,7 +239,8 @@ offshore <- subset(eastcoast, eastcoast$Bathy >= .200)
 
 
 
-#2) Abundance GAMMs
+# 2) Abundance GAMMs
+
 The following section contains code for the analysis of larval fish abundance using generalised additive mixed models (GAMM).
 
 Testing linear correlation between predictors using Pearson correlation
@@ -233,7 +249,7 @@ preds <- data.frame(eastcoast$Latitude, eastcoast$HadISST, eastcoast$stand_depth
 cor(preds)
 ```
 
-##Model selection
+## Model selection
 ```{r}
 # step 1) Full model
 model1 <-  gam(abundance ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
@@ -279,7 +295,7 @@ concurvity(model2i,full=TRUE)
 appraise(model2i)
 
 
-#overdisperison test
+#over disperison test
 E1 <- resid(model2i, type = "pearson")   #ok - less than 2
 N <- nrow(eastcoast)
 p <- length(coef(model2i))
@@ -323,14 +339,14 @@ moran.table[1,6] <- mI$p.value.randomization
 print(moran.table)
 ```
 
-##Plotting output
+## Plotting output
 Plotting effects of the larval fish abundance GAMM.
 
-##Figure 2. 
+## Figure 2. 
 Figure 2. Estimated terms in GAMM model of total larval abundance, where the black line is equal to the mean effect and the grey ribbon is the 95% Confidence Interval. A) Partial linear effect of exp(-Bathymetry) in kilometres. B-D) Estimated smoothers for sampling depth (meters), latitude during Summer, latitude during Autumn, latitude during Winter, and latitude during Spring. n = 3006.
 
 ```{r}
-#plot bathymetry effect
+# plot Bathymetry effect
 z <- evaluate_parametric_term(model2i, "exp(-Bathy)")
 z
 
@@ -367,9 +383,10 @@ abund_gam_effects
 
 
 #3) Richness GAMM
+
 The following section contains code for the analysis of larval fish taxa richness using generalised additive mixed models (GAMM).
 
-##Model selection
+## Model selection
 ```{r}
 # step 1) Full model
 model1 <-  gam(richness ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
@@ -396,7 +413,7 @@ model3 <-  gam(richness ~  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + 
 
 AIC(model3,model2i) ## AIC increased when season removed. ## model2i best model here. 
 
-anova(model3,model2i, test = "Chisq")  #sig dif therefore dont remove season
+anova(model3,model2i, test = "Chisq")  #sig dif therefore don't remove season
 
 ## therefore best model for richness appears to be model2i, removing Period based on AIC and s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5) based on concurvity.
 
@@ -455,10 +472,10 @@ moran.table[1,6] <- mI$p.value.randomization
 print(moran.table)
 ```
 
-##Plotting output
+## Plotting output
 Plotting effects of the larval fish taxa richness GAMM.
 
-##Figure 3. 
+## Figure 3. 
 Figure 3. Estimated terms in GAMM model of larval taxa richness, where the black line is equal to the mean effect and the grey ribbon is 95% Confidence Interval. A) Partial linear effect of exp(-Bathymetry) in kilometres. B) Non-linear effect of sampling depth (meters). C) Non-linear effect of latitude during Summer. D) Non-linear effect of latitude during Autumn. E) Non-linear effect of latitude during Winter. F) Non-linear effect of latitude during Spring. n = 3006.
 
 ```{r}
@@ -499,6 +516,7 @@ rich_gam_effects
 ```
 
 #4) Multivariate Analyses
+
 This section of the scripts uses an intercept-only multivariate generalised linear model (MGLM) model of the larval fish community in a Gaussian copula graphical model (GCGM), and quantile regression of the , to observe the effects of temperature (Figure 4), latitude (Supplementary Figure 2) and time period (Supplementary Figure 3).  
 
 Select inshore species in matrix to analyse
@@ -534,7 +552,7 @@ elements <- elements[!myvars] #removing species which never occur on in less tha
 elements <- mvabund(elements[,])
 ```
 
-##Fitting GCGM with intercept only MGLM 
+## Fitting GCGM with intercept only MGLM 
 ```{r}
 
 boxplot(elements) # inspect data ranges
@@ -582,8 +600,8 @@ LAT_bivariate_plot <- ggplot(plot_dat,aes(x=score_1,y=score_2,col=inshore.Latitu
                legend.text = element_text(size = 10, face = "bold"))
 ```
 
-##Quantial regression of bivariate scores against SST
-Quantial regression of score 1 from GCGM against SST
+## Quantile regression of bivariate scores against SST
+Quantile regression of score 1 from GCGM against SST
 ```{r}
 qs <- c(0.05, 0.5, 0.95) ### What quantiles are we interested in... 5%, 50% and 95%
 
@@ -617,7 +635,7 @@ p_score1 <- p + theme(legend.position=c(0.15, .8), legend.title = element_text(s
 p_score1
 ```
 
-Quantial regression of score 2 from GCGM against SST
+Quantile regression of score 2 from GCGM against SST
 ```{r}
 qs <- c(0.05, 0.5, 0.95) ### What quantiles are we interested in... 5%, 50% and 95%
 
@@ -630,7 +648,7 @@ SM
 
 Plotting quantile regression score 2 from GCGM against SST
 ```{r}
-### Buiild a ggplot
+### Build a ggplot
 p <- ggplot(plot_dat, aes(x = inshore.HadISST, y = score_2)) +
   geom_point(size = 3, na.rm = TRUE, shape = 1) 
 p <- p + theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) ## set up plot area
@@ -649,9 +667,9 @@ p_score2 <- p + theme(legend.position=c(0.15, .8), legend.title = element_text(s
 p_score2
 ```
 
-Plotting the GCGM bivariate scores 1 and 2 with SST, and quantile regression plots, as per Figure 4 in the manuscirpt.
+Plotting the GCGM bivariate scores 1 and 2 with SST, and quantile regression plots, as per Figure 4 in the manuscript.
 
-##Figure 4. 
+## Figure 4. 
 Figure 4. A) GCGM bivariate scores 1 and 2 from the MGLM intercept-only model of all larval fish taxa abundances . Each point represents an assemblage and the colour of the points represents SST in °C. B) GCGM bivariate score 1 by SST and C) GCGM bivariate score 2 by SST. Blue lines represent 0.05, 0.5 and 0.95 quantiles. n = 2428.
 
 ```{r}
@@ -659,8 +677,8 @@ figure_4_plot <- plot_grid(SST_bivariate_plot, p_score1, p_score2, labels = c('A
 figure_4_plot
 ```
 
-##Univariate tests for MGLM with SST
-The univariate tests for the MGLM with SST were run on the Univeristy of New South Wales computational cluster 'Katana' supported by Research Technology Services. The r script included in the repo 'manyglm_uni_test.R' contains the analyses. Here, we import the output to observe the results.
+## Univariate tests for MGLM with SST
+The univariate tests for the MGLM with SST were run on the University of New South Wales computational cluster 'Katana' supported by Research Technology Services. The r script included in the repo 'manyglm_uni_test.R' contains the analyses. Here, we import the output to observe the results.
 
 Read in rds and display output
 ```{r}
@@ -715,8 +733,8 @@ useful_output
 
 
 
-##Quantial regression of bivariate scores against Latitude
-Now running quantial regression of score 1 from GCGM against Latitude
+## Quantile regression of bivariate scores against Latitude
+Now running quantile regression of score 1 from GCGM against Latitude
 ```{r}
 qs <- c(0.05, 0.5, 0.95) ### What quantiles are we interested in... 5%, 50% and 95%
 
@@ -750,7 +768,7 @@ p_score1 <- p + theme(legend.position=c(0.15, .8), legend.title = element_text(s
 p_score1
 ```
 
-Now running quantial regression of score 1 from GCGM against Latitude
+Now running quantile regression of score 1 from GCGM against Latitude
 ```{r}
 qs <- c(0.05, 0.5, 0.95) ### What quantiles are we interested in... 5%, 50% and 95%
 
@@ -785,7 +803,7 @@ p_score2
 
 Plotting the GCGM bivariate scores 1 and 2 with Latitude, and quantile regression plots, as per Supplementary Figure 2 in the manuscript.
 
-##Supp Figure 2.
+## Supp Figure 2.
 Supplementary Figure 2. A) GCGM bivariate scores 1 and 2. Each point represents an assemblage and the colour of the points represents latitude. B) GCGM bivariate score 1 by latitude and C) GCGM bivariate score 2 by latitude. Blue lines represent 0.05, 0.5 and 0.95 quantiles. n = 2428.
 
 ```{r}
@@ -796,7 +814,7 @@ supp_figure_2_plot
 
 Observing difference in community composition of larval fish taxa with latitude before and after 1998 (coinciding with the 1998/99 El Nino event)in the bivariate scores of the GCGM with intercept only MGLM. 
 
-##Supp Figure 3.
+## Supp Figure 3.
 Supplementary Figure 3. A) GCGM bivariate scores 1 and 2. Each point represents an assemblage and the colour of the points represents the ‘Period’, black circles are pre-1998 and orange circles are post-1998. B) GCGM bivariate score 1 by latitude and C) GCGM bivariate score 2 by latitude. Trend lines are fit with a loess smoother. 
 
 ```{r}
