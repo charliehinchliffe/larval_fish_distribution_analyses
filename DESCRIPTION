@@ -1,0 +1,42 @@
+Type: Compendium
+Package: Compendium title
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.1
+Authors@R: 
+    person(given = "Charles",
+           family = "Hinchliffe",
+           role = c("aut", "cre"),
+           email = "c.hinchliffe@unsw.edu.au")),
+    person(given = "Daniel",
+           family = "Falster",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0002-9814-092X"))
+Description: Compendium description
+License: MIT + file LICENSE
+Depends: 
+    car,
+    cowplot,
+    dplyr,
+    ecoCopula,
+    ggplot2,
+    ggplotify,
+    ggpubr,
+    gratia,
+    grid,
+    gridGraphics,
+    knitr,
+    lctools,
+    lubridate,
+    mgcv,
+    mvabund,
+    pracma,
+    quantreg,
+    rmarkdown,
+    tidyverse,
+    vegan
+Remotes: 
+    gordy2x/ecoCopula,
+    gavinsimpson/gratia
+Encoding: UTF-8
+Language: en
+LazyData: true

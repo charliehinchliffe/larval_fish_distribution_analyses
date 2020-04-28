@@ -28,12 +28,9 @@ load required packages for all analyses and figure building.
 library(mgcv)
 library(vegan)##loading required package
 library(car)
-library(FSA)
 library(lubridate)
 library(ggplot2)
 library(pracma)
-library(visreg)
-#library(devtools)
 #install_github('gavinsimpson/gratia')
 library(gratia)
 library(lctools)
@@ -42,14 +39,11 @@ library(ggplot2)
 library(gridGraphics)
 library(cowplot)
 library(ggpubr)
-#install.packages("grid")
-#install.packages("ggplotify")
 library("grid")
 library("ggplotify")
 
 library(mvabund)
-#install ecocopula
-#install.packages("devtools")
+#install ecoCopula
 #devtools::install_github("gordy2x/ecoCopula",force=TRUE)
 library(ecoCopula)
 library(quantreg)
