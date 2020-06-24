@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This script contains code to reproduce the analyses and figures from Hinchliffe C et al 2020, "Seasonal and latitudinal distribution of larval fish in temperate waters of south-eastern Australia" (Link).
 
-There are 3 major analyses within the manuscript. The first two involve analyses the seasonal and latitudinal variation in larval fish abundance and taxa richness using generalised additive mixed-models (GAMMs) and can be found in section 2) and 3) in this script. The third major analyses involves investigation of the community composition of larval fish across the study area, first in relation to Sea Surface Temperature (SST), followed by Latitude (which appears in the supplementary material of the manuscript), and can be found in section 4) of this script. The figures associated with each analysis are at the end of each section, with there figure number as they appear in the manuscript and figure caption.
+There are 3 major analyses within the manuscript. The first two involve analysis of the seasonal and latitudinal variation in larval fish abundance and taxa richness using generalised additive mixed-models (GAMMs) and can be found in section 2) and 3) in this script. The third major analyses involves investigation of the community composition of larval fish across the study area, first in relation to Sea Surface Temperature (SST), followed by Latitude (which appears in the supplementary material of the manuscript), and can be found in section 4) of this script. The figures associated with each analysis are at the end of each section, with there figure number as they appear in the manuscript and figure caption.
 
 # 1) Data manipulation and cleaning
 
@@ -25,23 +25,21 @@ This section of the script cleans data and creates variables required for the su
 
 load required packages for all analyses and figure building.
 ```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
 library(mgcv)
-library(vegan)##loading required package
+library(vegan)
 library(car)
 library(lubridate)
-library(ggplot2)
 library(pracma)
 #install_github('gavinsimpson/gratia')
 library(gratia)
 library(lctools)
-
 library(ggplot2)
 library(gridGraphics)
 library(cowplot)
 library(ggpubr)
 library("grid")
 library("ggplotify")
-
 library(mvabund)
 #install ecoCopula
 #devtools::install_github("gordy2x/ecoCopula",force=TRUE)
@@ -59,21 +57,21 @@ nimo.data <- read.csv("all_data.csv", header=TRUE)
 Make bathymetry absolute values in km units
 ```{r}
 nimo.data$Bathy <- (abs(nimo.data$Bathy)/1000)   
-summary(nimo.data$Bathy)
+#summary(nimo.data$Bathy)
 ```
 
 Create date variables
 ```{r}
 nimo.data$DateCaught <- as.Date(nimo.data$Date, "%d/%m/%Y")
 nimo.data$Month <- month(nimo.data$Date)
-summary(nimo.data$Month)
+#summary(nimo.data$Month)
 nimo.data$Year <- year(nimo.data$DateCaught)
 nimo.data$Day <- day(nimo.data$DateCaught)
-summary(nimo.data$Day)
+#summary(nimo.data$Day)
 
 nimo.data$dayofyear <- yday(nimo.data$DateCaught)
-summary(nimo.data$dayofyear)
-hist(nimo.data$dayofyear)
+#summary(nimo.data$dayofyear)
+#hist(nimo.data$dayofyear)
 ```
 
 Create season variables
@@ -112,12 +110,11 @@ nimo.data$Period[nimo.data$Year  <= 1998] <- "pre1998"
 nimo.data$Period[nimo.data$Year  >= 1999] <- "post1998"
 
 nimo.data$Decade <- as.factor(nimo.data$Decade)
-summary(nimo.data$Decade)
+#summary(nimo.data$Decade)
 
 nimo.data$Period <- as.factor(nimo.data$Period)
-summary(nimo.data$Period)
+#summary(nimo.data$Period)
 ```
-
 
 Create latitudinal region variable
 ```{r}
@@ -133,7 +130,7 @@ nimo.data$Region <- as.factor(nimo.data$Region)
 
 nimo.data$Region <- as.factor(nimo.data$Region)
 nimo.data$Region <- factor(nimo.data$Region, ordered = TRUE, levels = c("North", "Mid-North", "Mid-South","South"))
-summary(nimo.data$Region) 
+#summary(nimo.data$Region) 
 ```
 
 Create mid-point standardised sampling depth variable
@@ -168,7 +165,6 @@ nimo.data$stand_depth <- as.numeric(nimo.data$stand_depth)
 
 nimo.data$stand_depth <- (nimo.data$stand_depth/2)
 
-summary(nimo.data$stand_depth)
 ```
 
 Create sampling depth factors
@@ -212,14 +208,14 @@ eastcoast <- subset(nimo.data, nimo.data$Longitude >= 130)
 westcoast <- subset(nimo.data, nimo.data$Longitude <= 130)
 ```
 
-Check SST and HadISST correlation on east coast
+Check SST and Hadley Centre Global Sea Ice and Sea Surface Temperature (HadISST) correlation on east coast
 ```{r}
 eastcoast$SST <- as.numeric(eastcoast$SST)
 eastcoast$HadISST <- as.numeric(eastcoast$HadISST)
 
 cor.test(eastcoast$SST,eastcoast$HadISST, method = c("pearson", "kendall", "spearman"))
 
-plot(x = eastcoast$SST,y = eastcoast$HadISST)
+#plot(x = eastcoast$SST,y = eastcoast$HadISST)
 ```
 
 ## Separate inshore and offshore
@@ -233,7 +229,7 @@ offshore <- subset(eastcoast, eastcoast$Bathy >= .200)
 
 
 
-# 2) Abundance GAMMs
+# 2) Abundance GAMM
 
 The following section contains code for the analysis of larval fish abundance using generalised additive mixed models (GAMM).
 
@@ -249,7 +245,7 @@ cor(preds)
 model1 <-  gam(abundance ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
 
 
-concurvity(model1, full=T) #checking concurvity
+#concurvity(model1, full=T) #checking concurvity
 
 # step 2)  s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  removed due to concurvity
 model2 <-  gam(abundance ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
@@ -258,9 +254,9 @@ model2 <-  gam(abundance ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs
 # Step 3) Period removed based on AIC score, checked with chi-sq test
 model2i <-  gam(abundance ~  Season  +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
 
-AIC(model2,model2i) ## AIC reduced with period removed
+#AIC(model2,model2i) ## AIC reduced with period removed
 
-anova(model2,model2i, test = "Chisq") #non sig therefore can remove period (adds nothing to model)
+#anova(model2,model2i, test = "Chisq") #non sig therefore can remove period (adds nothing to model)
 
 
 
@@ -268,9 +264,9 @@ anova(model2,model2i, test = "Chisq") #non sig therefore can remove period (adds
 model3 <-  gam(abundance ~  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
 
 
-AIC(model3,model2i) ## AIC increased when season removed. ## model2i best model here. 
+#AIC(model3,model2i) ## AIC increased when season removed. ## model2i best model here. 
 
-anova(model3,model2i, test = "Chisq")  #sig dif therefore dont remove season
+#anova(model3,model2i, test = "Chisq")  #sig dif therefore dont remove season
 
 
 ## therefore best model for abundance appears to be model2i, removing Period based on AIC and s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5) based on concurvity.
@@ -278,12 +274,12 @@ anova(model3,model2i, test = "Chisq")  #sig dif therefore dont remove season
 
 #Best model summary
 summary(model2i) 
-par(mfcol=c(3,2))
-plot(model2i, shade = TRUE)
+#par(mfcol=c(3,2))
+#plot(model2i, shade = TRUE)
 
 
 #checking concurvity
-concurvity(model2i,full=TRUE)
+#concurvity(model2i,full=TRUE)
 
 #checking assumptions
 appraise(model2i)
@@ -294,7 +290,7 @@ E1 <- resid(model2i, type = "pearson")   #ok - less than 2
 N <- nrow(eastcoast)
 p <- length(coef(model2i))
 Overdispersion <- sum(E1^2) / (N - p)
-paste('Overdispersion: ',Overdispersion) #"Overdispersion:  1.58845886919077"
+#paste('Overdispersion: ',Overdispersion) #"Overdispersion:  1.58845886919077"
 
 ```
 
@@ -342,11 +338,11 @@ Figure 2. Estimated terms in GAMM model of total larval abundance, where the bla
 ```{r}
 # plot Bathymetry effect
 z <- evaluate_parametric_term(model2i, "exp(-Bathy)")
-z
+#z
 
 
 pbath <- ggplot(z, aes(x = value, y = partial)) +
-  geom_line(rugs = T) +
+  geom_line() +
   geom_ribbon(data=z,aes(ymin=upper,ymax=lower),alpha=0.3) +
   xlab("exp(-Bathy)") +
   ylab("Partial effect of exp(-Bathy)")  +
@@ -356,27 +352,27 @@ pbath <- ggplot(z, aes(x = value, y = partial)) +
 
 #plot smooth effects and save as grob file
 p1 <- as.grob(function() plot(model2i, shade = TRUE, select = 1))
-p1
+#p1
 
 p2 <- as.grob(function() plot(model2i, shade = TRUE, select = 2))
-p2
+#p2
 
 p3 <- as.grob(function() plot(model2i, shade = TRUE, select = 3))
-p3
+#p3
 
 p4 <- as.grob(function() plot(model2i, shade = TRUE, select = 4))
-p4
+#p4
 
 p5 <- as.grob(function() plot(model2i, shade = TRUE, select = 5))
-p5
+#p5
 
-abund_gam_effects <- plot_grid(pbath, p1, p4, p2, p5, p3, labels = c('A', 'B', 'C', 'D', 'E', 'F'), label_size = 12, nrow = 3, ncol = 2)
+figure_2 <- plot_grid(pbath, p1, p4, p2, p5, p3, labels = c('A', 'B', 'C', 'D', 'E', 'F'), label_size = 12, nrow = 3, ncol = 2)
 
-abund_gam_effects
+figure_2
 ```
 
 
-#3) Richness GAMM
+# 3) Richness GAMM
 
 The following section contains code for the analysis of larval fish taxa richness using generalised additive mixed models (GAMM).
 
@@ -386,7 +382,7 @@ The following section contains code for the analysis of larval fish taxa richnes
 model1 <-  gam(richness ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
 
 
-concurvity(model1, full=T) #checking concurvity
+#concurvity(model1, full=T) #checking concurvity
 
 # step 2)  s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  removed due to concurvity
 model2 <-  gam(richness ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
@@ -395,9 +391,9 @@ model2 <-  gam(richness ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs 
 # Step 3) Period removed based on AIC score, checked with chi-sq test
 model2i <-  gam(richness ~  Season  +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
 
-AIC(model2,model2i) ## AIC reduced with period removed
+#AIC(model2,model2i) ## AIC reduced with period removed
 
-anova(model2,model2i, test = "Chisq") #non sig therefore can remove period (adds nothing to model)
+#anova(model2,model2i, test = "Chisq") #non sig therefore can remove period (adds nothing to model)
 
 
 
@@ -405,20 +401,20 @@ anova(model2,model2i, test = "Chisq") #non sig therefore can remove period (adds
 model3 <-  gam(richness ~  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
 
 
-AIC(model3,model2i) ## AIC increased when season removed. ## model2i best model here. 
+#AIC(model3,model2i) ## AIC increased when season removed. ## model2i best model here. 
 
-anova(model3,model2i, test = "Chisq")  #sig dif therefore don't remove season
+#anova(model3,model2i, test = "Chisq")  #sig dif therefore don't remove season
 
 ## therefore best model for richness appears to be model2i, removing Period based on AIC and s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5) based on concurvity.
 
 
 #Best model summary
 summary(model2i) 
-par(mfcol=c(3,2))
-plot(model2i, shade = TRUE) ### spline plots
+#par(mfcol=c(3,2))
+#plot(model2i, shade = TRUE) ### spline plots
 
 #checking concurvity
-concurvity(model2i,full=TRUE)
+#concurvity(model2i,full=TRUE)
 
 #checking assumptions
 appraise(model2i)
@@ -428,7 +424,7 @@ E1 <- resid(model2i, type = "pearson")   #ok - less than 2
 N <- nrow(eastcoast)
 p <- length(coef(model2i))
 Overdispersion <- sum(E1^2) / (N - p)
-paste('Overdispersion: ',Overdispersion) #"Overdispersion:  1.01888080182827"
+#paste('Overdispersion: ',Overdispersion) #"Overdispersion:  1.01888080182827"
 ```
 
 Checking spatial auto correlation of Taxa Richness GAMM with Moran's I 
@@ -475,11 +471,11 @@ Figure 3. Estimated terms in GAMM model of larval taxa richness, where the black
 ```{r}
 
 z <- evaluate_parametric_term(model2i, "exp(-Bathy)")
-z
+#z
 
 
 pbath <- ggplot(z, aes(x = value, y = partial)) +
-  geom_line(rugs = T) +
+  geom_line() +
   geom_ribbon(data=z,aes(ymin=upper,ymax=lower),alpha=0.3) +
   xlab("exp(-Bathy)") +
   ylab("Partial effect of exp(-Bathy)")  +
@@ -489,27 +485,27 @@ pbath <- ggplot(z, aes(x = value, y = partial)) +
 
 
 p1 <- as.grob(function() plot(model2i, shade = TRUE, select = 1))
-p1
+#p1
 
 p2 <- as.grob(function() plot(model2i, shade = TRUE, select = 2))
-p2
+#p2
 
 
 p3 <- as.grob(function() plot(model2i, shade = TRUE, select = 3))
-p3
+#p3
 
 p4 <- as.grob(function() plot(model2i, shade = TRUE, select = 4))
-p4
+#p4
 
 p5 <- as.grob(function() plot(model2i, shade = TRUE, select = 5))
-p5
+#p5
 
-rich_gam_effects <- plot_grid(pbath, p1, p4, p2, p5, p3, labels = c('A', 'B', 'C', 'D', 'E', 'F'), label_size = 12, nrow = 3, ncol = 2)
+figure_3 <- plot_grid(pbath, p1, p4, p2, p5, p3, labels = c('A', 'B', 'C', 'D', 'E', 'F'), label_size = 12, nrow = 3, ncol = 2)
 
-rich_gam_effects
+figure_3
 ```
 
-#4) Multivariate Analyses
+# 4) Multivariate Analyses
 
 This section of the scripts uses an intercept-only multivariate generalised linear model (MGLM) model of the larval fish community in a Gaussian copula graphical model (GCGM), and quantile regression of the , to observe the effects of temperature (Figure 4), latitude (Supplementary Figure 2) and time period (Supplementary Figure 3).  
 
@@ -549,9 +545,9 @@ elements <- mvabund(elements[,])
 ## Fitting GCGM with intercept only MGLM 
 ```{r}
 
-boxplot(elements) # inspect data ranges
+#boxplot(elements) # inspect data ranges
 
-meanvar.plot(elements) # check mean variance relationship
+#meanvar.plot(elements) # check mean variance relationship
 
 
 #fit <- manyglm(elements ~Latitude, family = "negative.binomial", offset = log(Volume_m3),data=inshore)
@@ -626,7 +622,7 @@ p <- p + theme(axis.text=element_text(size=16, face = "bold"))
 p <- p + theme(axis.title=element_text(size=16, face = "bold"))
 p_score1 <- p + theme(legend.position=c(0.15, .8), legend.title = element_text(size=16, face="bold"),
                legend.text = element_text(size = 16, face = "bold"))
-p_score1
+#p_score1
 ```
 
 Quantile regression of score 2 from GCGM against SST
@@ -658,7 +654,7 @@ p <- p + theme(axis.text=element_text(size=16, face = "bold"))
 p <- p + theme(axis.title=element_text(size=16, face = "bold"))
 p_score2 <- p + theme(legend.position=c(0.15, .8), legend.title = element_text(size=16, face="bold"),
                legend.text = element_text(size = 16, face = "bold"))
-p_score2
+#p_score2
 ```
 
 Plotting the GCGM bivariate scores 1 and 2 with SST, and quantile regression plots, as per Figure 4 in the manuscript.
@@ -667,8 +663,9 @@ Plotting the GCGM bivariate scores 1 and 2 with SST, and quantile regression plo
 Figure 4. A) GCGM bivariate scores 1 and 2 from the MGLM intercept-only model of all larval fish taxa abundances . Each point represents an assemblage and the colour of the points represents SST in °C. B) GCGM bivariate score 1 by SST and C) GCGM bivariate score 2 by SST. Blue lines represent 0.05, 0.5 and 0.95 quantiles. n = 2428.
 
 ```{r}
-figure_4_plot <- plot_grid(SST_bivariate_plot, p_score1, p_score2, labels = c('A', 'B', 'C'), label_size = 12, nrow = 1, ncol = 3)
-figure_4_plot
+figure_4 <- plot_grid(SST_bivariate_plot, p_score1, p_score2, labels = c('A', 'B', 'C'), label_size = 12, nrow = 1, ncol = 3)
+
+figure_4
 ```
 
 ## Univariate tests for MGLM with SST
@@ -697,19 +694,17 @@ useful_output <- as.data.frame(useful_output)
 
 sig_out <- subset(useful_output, useful_output$HadISST <= 0.05)
 
-sig_out
+#sig_out
 
 
 
 
-sum(useful_output$HadISST1) #whole test dev
+#sum(useful_output$HadISST1) #whole test dev
 
 useful_output$dev_exp <- (useful_output$HadISST1/sum(useful_output$HadISST1))*100
 
-useful_output
+#useful_output
 
-library(tidyverse)
-library(dplyr)
 
 useful_output <- useful_output %>% 
   rename(
@@ -720,7 +715,7 @@ useful_output <- useful_output %>%
 
 
 
-useful_output
+head(useful_output)
 
 #write.csv(useful_output, "manyglm_temp_uni.csv")
 ```
@@ -759,7 +754,7 @@ p <- p + theme(axis.text=element_text(size=16, face = "bold"))
 p <- p + theme(axis.title=element_text(size=16, face = "bold"))
 p_score1 <- p + theme(legend.position=c(0.15, .8), legend.title = element_text(size=16, face="bold"),
                legend.text = element_text(size = 16, face = "bold"))
-p_score1
+#p_score1
 ```
 
 Now running quantile regression of score 1 from GCGM against Latitude
@@ -792,7 +787,7 @@ p <- p + theme(axis.text=element_text(size=16, face = "bold"))
 p <- p + theme(axis.title=element_text(size=16, face = "bold"))
 p_score2 <- p + theme(legend.position=c(0.15, .8), legend.title = element_text(size=16, face="bold"),
                legend.text = element_text(size = 16, face = "bold"))
-p_score2
+#p_score2
 ```
 
 Plotting the GCGM bivariate scores 1 and 2 with Latitude, and quantile regression plots, as per Supplementary Figure 2 in the manuscript.
@@ -801,8 +796,9 @@ Plotting the GCGM bivariate scores 1 and 2 with Latitude, and quantile regressio
 Supplementary Figure 2. A) GCGM bivariate scores 1 and 2. Each point represents an assemblage and the colour of the points represents latitude. B) GCGM bivariate score 1 by latitude and C) GCGM bivariate score 2 by latitude. Blue lines represent 0.05, 0.5 and 0.95 quantiles. n = 2428.
 
 ```{r}
-supp_figure_2_plot <- plot_grid(LAT_bivariate_plot, p_score1, p_score2, labels = c('A', 'B', 'C'), label_size = 12, nrow = 1, ncol = 3)
-supp_figure_2_plot
+supp_figure_2 <- plot_grid(LAT_bivariate_plot, p_score1, p_score2, labels = c('A', 'B', 'C'), label_size = 12, nrow = 1, ncol = 3)
+
+supp_figure_2
 ```
 
 
@@ -822,7 +818,7 @@ p1<- ggplot(plot_dat,aes(x=score_1,y=score_2))+
   theme(legend.position=c(0.85, .9), legend.title = element_text(size=10, face="bold"),
                legend.text = element_text(size = 10, face = "bold"))
   
-p1
+#p1
 
 p2 <- ggplot(plot_dat,aes(x=inshore.Latitude, y=score_1, col=inshore.Period))+
    geom_point(aes(color = inshore.Period), size = 4, alpha = 0.5,  shape = 1) + 
@@ -843,6 +839,7 @@ p3 <-  ggplot(plot_dat,aes(x=inshore.Latitude, y=score_2, col=inshore.Period))+
 
 
 
-el_nino_plot <- plot_grid(p1, p2, p3, labels = c('A', 'B', 'C'), label_size = 12, nrow = 1, ncol = 3)
-el_nino_plot
+supp_figure_3 <- plot_grid(p1, p2, p3, labels = c('A', 'B', 'C'), label_size = 12, nrow = 1, ncol = 3)
+
+supp_figure_3
 ```
