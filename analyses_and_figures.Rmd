@@ -9,7 +9,7 @@ output:
       smooth_scroll: false
 ---
 
-```{r setup, include=FALSE}
+```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -38,8 +38,8 @@ library(ggplot2)
 library(gridGraphics)
 library(cowplot)
 library(ggpubr)
-library("grid")
-library("ggplotify")
+library(grid)
+library(ggplotify)
 library(mvabund)
 #install ecoCopula
 #devtools::install_github("gordy2x/ecoCopula",force=TRUE)
@@ -47,10 +47,9 @@ library(ecoCopula)
 library(quantreg)
 ```
 
-
 bring in data
 ```{r}
-nimo.data <- read.csv("all_data.csv", header=TRUE)
+nimo.data <- read.csv("data/all_data.csv", header=TRUE)
 #head(nimo.data)
 ```
 
@@ -78,23 +77,13 @@ Create season variables
 ```{r}
 nimo.data$Month <- as.factor(nimo.data$Month) #month as factor
 
-nimo.data$Season <- "0" #make season variable
+#make season variable
+nimo.data$Season <- NA_character_ 
 
-nimo.data$Season[nimo.data$Month  == "12"] <- "summer"
-nimo.data$Season[nimo.data$Month  == "1"] <- "summer"
-nimo.data$Season[nimo.data$Month  == "2"] <- "summer"
-
-nimo.data$Season[nimo.data$Month  == "3"] <- "autumn"
-nimo.data$Season[nimo.data$Month  == "4"] <- "autumn"
-nimo.data$Season[nimo.data$Month  == "5"] <- "autumn"
-
-nimo.data$Season[nimo.data$Month  == "6"] <- "winter"
-nimo.data$Season[nimo.data$Month  == "7"] <- "winter"
-nimo.data$Season[nimo.data$Month  == "8"] <- "winter"
-
-nimo.data$Season[nimo.data$Month  == "9"] <- "spring"
-nimo.data$Season[nimo.data$Month  == "10"] <- "spring"
-nimo.data$Season[nimo.data$Month  == "11"] <- "spring"
+nimo.data$Season[nimo.data$Month %in% c(1,2,12)] <- "summer"
+nimo.data$Season[nimo.data$Month %in% 3:5] <- "autumn"
+nimo.data$Season[nimo.data$Month %in% 6:8] <- "winter"
+nimo.data$Season[nimo.data$Month %in% 9:11] <- "spring"
 
 nimo.data$Season <- as.factor(nimo.data$Season)
 nimo.data$Month <- as.numeric(nimo.data$Month) 
@@ -150,6 +139,8 @@ nimo.data$stand_depth[nimo.data$stand_depth  == "0-40"] <- "40"
 nimo.data$stand_depth[nimo.data$stand_depth  == "0-50"] <- "50"
 
 nimo.data$stand_depth[nimo.data$stand_depth  == "0-80"] <- "80"
+
+# Check -- are the following lines correct?
 
 nimo.data$stand_depth[nimo.data$stand_depth  == "25-50"] <- "75"
 
@@ -678,7 +669,7 @@ The univariate tests for the MGLM with SST were run on the University of New Sou
 
 Read in rds and display output
 ```{r}
-Uni_test_manyglm_output <- readRDS("Uni_test_manyglm_output.rds")
+Uni_test_manyglm_output <- readRDS("outputs/Uni_test_manyglm_output.rds")
 
 #Uni_test_manyglm_output
 

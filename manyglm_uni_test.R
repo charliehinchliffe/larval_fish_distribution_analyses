@@ -10,7 +10,7 @@ library(pracma)
 library(mvabund)
 
 #read in data
-nimo.data<-read.csv("all_data.csv", header=TRUE)
+nimo.data<-read.csv("data/all_data.csv", header=TRUE)
 head(nimo.data)
 str(nimo.data)
 
@@ -236,9 +236,11 @@ elements <- elements[!myvars]
 elements <- mvabund(elements[,])
 
 
+dir.create("outputs", FALSE, FALSE)
+
 fit <- manyglm(elements ~ HadISST, family = "negative.binomial", offset = log(Volume_m3),data=inshore)
-saveRDS(fit, "manyglm_HaDISST_model.rds") 
+saveRDS(fit, "outputs/manyglm_HaDISST_model.rds") 
 
 Uni_test_manyglm <- anova(fit, nBoot=9999, p.uni = "adjusted")
-saveRDS(Uni_test_manyglm, "Uni_test_manyglm_output.rds")
+saveRDS(Uni_test_manyglm, "outputs/Uni_test_manyglm_output.rds")
 

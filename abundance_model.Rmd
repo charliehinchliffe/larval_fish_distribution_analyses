@@ -1,13 +1,12 @@
 ---
 title: "Abundance_model"
-output: console
 ---
 
 
 
 The notebook contains the analysis of larval fish abundance, using gerneralized additive models (GAMs)
 
-
+# Setup 
 
 load packages
 ```{r}
@@ -20,7 +19,7 @@ library(ggplot2)
 library(pracma)
 library(visreg)
 #library(devtools)
-#install_github('gavinsimpson/gratia')
+#devtools::install_github('gavinsimpson/gratia')
 library(gratia)
 
 ```
@@ -28,30 +27,32 @@ library(gratia)
 
 bring in data
 ```{r}
-nimo.data<-read.csv("all_data.csv", header=TRUE)
+nimo.data <- read.csv("data/all_data.csv", header=TRUE)
 head(nimo.data)
-str(nimo.data)
 ```
 
 
 ```{r}
-nimo.data$Bathy <- (abs(nimo.data$Bathy)/1000)   ### make bathymetry absolute values in km units
+### make bathymetry absolute values in km units
+nimo.data$Bathy <- (abs(nimo.data$Bathy)/1000)   
+
 summary(nimo.data$Bathy)
 
-plot(log(nimo.data$Bathy)~ nimo.data$Latitude)
+plot(log(nimo.data$Bathy) ~ nimo.data$Latitude)
 
 
 hist(nimo.data$Bathy)
 ```
 
+# Data processing
 
-
-#creating date variables#
+## Creating date variables
 
 ```{r}
 nimo.data$DateCaught <- as.Date(nimo.data$Date, "%d/%m/%Y")
-nimo.data$Month <- month(nimo.data$Date)
+nimo.data$Month <- month(nimo.data$DateCaught)
 summary(nimo.data$Month)
+
 nimo.data$Year <- year(nimo.data$DateCaught)
 nimo.data$Day <- day(nimo.data$DateCaught)
 summary(nimo.data$Day)
@@ -61,44 +62,21 @@ summary(nimo.data$dayofyear)
 hist(nimo.data$dayofyear)
 ```
 
-#creating Season variables
+## Creating Season variables
 
 ```{r}
-nimo.data$Month <- as.factor(nimo.data$Month) #month as factor
+#make season variable
+nimo.data$Season <- NA_character_ 
 
-nimo.data$Season <- "0" #make season variable
+nimo.data$Season[nimo.data$Month %in% c(1,2,12)] <- "summer"
+nimo.data$Season[nimo.data$Month %in% 3:5] <- "autumn"
+nimo.data$Season[nimo.data$Month %in% 6:8] <- "winter"
+nimo.data$Season[nimo.data$Month %in% 9:11] <- "spring"
 
-nimo.data$Season[nimo.data$Month  == "12"] <- "summer"
-nimo.data$Season[nimo.data$Month  == "1"] <- "summer"
-nimo.data$Season[nimo.data$Month  == "2"] <- "summer"
-
-nimo.data$Season[nimo.data$Month  == "3"] <- "autumn"
-nimo.data$Season[nimo.data$Month  == "4"] <- "autumn"
-nimo.data$Season[nimo.data$Month  == "5"] <- "autumn"
-
-nimo.data$Season[nimo.data$Month  == "6"] <- "winter"
-nimo.data$Season[nimo.data$Month  == "7"] <- "winter"
-nimo.data$Season[nimo.data$Month  == "8"] <- "winter"
-
-nimo.data$Season[nimo.data$Month  == "9"] <- "spring"
-nimo.data$Season[nimo.data$Month  == "10"] <- "spring"
-nimo.data$Season[nimo.data$Month  == "11"] <- "spring"
-
-nimo.data$Season <- as.factor(nimo.data$Season)
-nimo.data$Month <- as.numeric(nimo.data$Month) 
-
-
-
+nimo.data$Season <- factor(nimo.data$Season, ordered = TRUE, levels = c("summer", "autumn", "winter","spring"))
 ```
 
-#```{r}
-nimo.data$Season <- as.factor(nimo.data$Season)
-nimo.data$Season <- factor(nimo.data$Season, ordered = TRUE, levels = c("summer", "autumn", "winter","spring"))
-summary(nimo.data$Season) 
-#```
-
-
-#creatingtime period levels
+## Creating time period levels
 
 
 ```{r}
@@ -119,26 +97,15 @@ summary(nimo.data$Period)
 
 
 
-#create Region variable
+## Region variable
 
 
 ```{r}
 nimo.data$Region[nimo.data$Latitude  <= -40] <- "South"
-
 nimo.data$Region[nimo.data$Latitude  <= -35 & nimo.data$Latitude > -40] <- "Mid-South"
-
 nimo.data$Region[nimo.data$Latitude  <= -30 & nimo.data$Latitude > -35] <- "Mid-North"
-
 nimo.data$Region[nimo.data$Latitude  > -30] <- "North"
-
-nimo.data$Region <- as.factor(nimo.data$Region)
-
-```
-
-
-```{r}
-nimo.data$Region <- as.factor(nimo.data$Region)
-nimo.data$Region <- factor(nimo.data$Region, ordered = TRUE, levels = c("North", "Mid-North", "Mid-South","South"))
+nimo.data$Region <- factor(nimo.data$Region, levels = c("North", "Mid-North", "Mid-South","South"))
 summary(nimo.data$Region) 
 ```
 
@@ -153,13 +120,11 @@ summary(nimo.data$Region)
 # summary(nimo.data$Gear_depth_m)
 ```
 
-#### Standardizing depth variable.
+## Standardizing depth variable.
 
 ```{r}
 nimo.data$stand_depth <- as.character(nimo.data$Gear_depth_m)
 ```
-
-
 
 
 ```{r}
@@ -197,8 +162,6 @@ nimo.data$stand_depth <- (nimo.data$stand_depth/2)
 summary(nimo.data$stand_depth)
 ```
 
-
-
 ## create depth factors
 
 
@@ -223,9 +186,7 @@ nimo.data$depth_sect <- as.factor(nimo.data$depth_sect)
 
 
 
-
-
-### Creating diversity variables
+## Creating diversity variables
 
 
 ```{r}
@@ -267,7 +228,7 @@ plot(nimo.data$shannon ~ nimo.data$shannon_effective)
 ```
 
 
-###seperate WA and east
+## Seperate WA and east
 ```{r}
 eastcoast <- subset(nimo.data, nimo.data$Longitude >= 130)
 westcoast <- subset(nimo.data, nimo.data$Longitude <= 130)
@@ -297,8 +258,7 @@ plot(x = eastcoast$Bathy, y = eastcoast$Bathym_m)
 ```
 
 
-
-##seperate Inshore and offshore
+## Seperate Inshore and Offshore
 ```{r}
 inshore <- subset(eastcoast, eastcoast$Bathy <= .200)
 offshore <- subset(eastcoast, eastcoast$Bathy >= .200)
@@ -375,87 +335,88 @@ as.factor(eastcoast$find_na)
 print[eastcoast$find_na == "missing"]
 ```
 
+# Model selection
 
+## Step 1) Full model
 
 ```{r}
-#model selection
-
-# step 1) Full model
-model1 <-  gam(abundance ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+model1 <-  gam(
+  abundance ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), 
+  method = "REML", fit=TRUE,  Select=TRUE)
 
 
 concurvity(model1, full=T) #checking concurvity
+```
 
-# step 2)  s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  removed due to concurvity
-model2 <-  gam(abundance ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+## Step 2)  s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  removed due to concurvity
+
+```{r}
+model2 <-  gam(
+  abundance ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+```
 
 
-# Step 3) Period removed based on AIC score, checked with chi-sq test
+## Step 3) Period removed based on AIC score, checked with chi-sq test
+
+```{r}
 model2i <-  gam(abundance ~  Season  +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
 
 AIC(model2,model2i) ## AIC reduced with period removed
 
 anova(model2,model2i, test = "Chisq") #non sig therefore can remove period (adds nothing to model)
+```
 
+## Step 4) linear Season term removed, but increases AIC and is sig dif in chi-sq test there retain Season in model
 
-
-# Step 4) linear Season term removed, but increases AIC and is sig dif in chi-sq test there retain Season in model
+```{r}
 model3 <-  gam(abundance ~  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
-
 
 AIC(model3,model2i) ## AIC increased when season removed. ## model2i best model here. 
 
 anova(model3,model2i, test = "Chisq")  #sig dif therefore dont remove season
+```
 
+Therefore best model for abundance appears to be model2i, removing Period based on AIC and s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5) based on concurvity.
 
+## Best model summary
 
-
-
-
-## therefore best model for abundance appears to be model2i, removing Period based on AIC and s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5) based on concurvity.
-
-
-
-
-
-
-#Best model summary
+```{r}
 summary(model2i) 
+```
 
-#checking concurvity
+checking concurvity
+
+```{r}
 concurvity(model2i,full=TRUE)
+```
 
-#checking assumptions
+checking assumptions
+
+```{r}
 gam.check(model2i)
+```
 
 
+```{r}
 par(mfcol=c(3,2))
 plot(model2i, shade = TRUE)
 visreg(model2i) 
 appraise(model2i)
+```
 
 
+Overdisperison test
 
-
-
-#overdisperison test
+```{r}
 E1 <- resid(model2i, type = "pearson")   #ok - less than 2
 N <- nrow(eastcoast)
 p <- length(coef(model2i))
 Overdispersion <- sum(E1^2) / (N - p)
 paste('Overdispersion: ',Overdispersion)
-#"Overdispersion:  1.58845886919077"
-
-  
 ```
 
 
-
-
-
-
-Abundance model
-
+# Abundance model
 
 Checking (bs = cr) vs (bs = cs), cr is cubic regression spline and cs is cubic regression spline with shrinkage.
 
@@ -472,36 +433,29 @@ modelcr <- gam(abundance ~  Season +  exp(-Bathy) + s(stand_depth, bs =  "cr", k
 # bs = cr cubic regression spline
 
 AIC(modelcs, modelcr)
+```
 
-
-
-
-
+```{r}
 plot(modelcs)
 appraise(modelcs)
+```
 
-
+```{r}
 summary(modelcs)
+```
 
 
-
+```{r}
 concurvity(modelcs,full=T) ###  s(dists_km) displayed high concurvity; observed    1   0.7807189
+```
 
+```{r}
 E1 <- resid(modelcs, type = "pearson")   #ok - less than 2
 N <- nrow(eastcoast)
 p <- length(coef(modelcs))
 Overdispersion <- sum(E1^2) / (N - p)
 paste('Overdispersion: ',Overdispersion)
-#"Overdispersion:  1.59512776804987"
-
-
-
-
 ```
-
-
-
-
 
 
 
@@ -568,7 +522,7 @@ abund_gam_effects
 
 
 
-#checking spatial autocorrelation of abundance model
+# Checking spatial autocorrelation of abundance model
 
 Moran's I    Expected I     Z resampling   P-value resampling   Z randomization  P-value randomization
 0.02829349   -0.0003327787      7.50697       6.051145e-14        7.508436          5.983793e-14
@@ -615,8 +569,6 @@ print(moran.table)
 ```
 
 
-
-
 Looking at residuals of model against temp.
 ```{r, eval = FALSE}
 reg <- lm(res ~ eastcoast$HadISST)
@@ -629,7 +581,7 @@ coefficients(reg)
 
 
 
-########Gam models with tempo for appendix
+# Gam models with tempo for appendix
 
 ```{r, eval = FALSE}
 modeltemp <- gam(abundance ~  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(HadISST,  bs =  "cs", k = 5) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE) 
@@ -662,30 +614,4 @@ AIC(modelcs, modelcs2)
 
 plot(modelcs2)
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
