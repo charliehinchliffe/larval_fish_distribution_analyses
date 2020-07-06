@@ -1,5 +1,5 @@
 ---
-title: "Analyses of seasonal and latitudinal distribution of larval fish in temperate waters of south-eastern Australia"
+title: "Analyses of seasonal and latitudinal distribution of larval fish in a changing western boundary current"
 author: Charles Hinchliffe
 output: 
   html_document:
@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Summary
 
-This script contains code to reproduce the analyses and figures from Hinchliffe C et al 2020, "Seasonal and latitudinal distribution of larval fish in temperate waters of south-eastern Australia" (Link).
+This script contains code to reproduce the analyses and figures from Hinchliffe C et al 2020, "Larval fish distribution in a changing western boundary current" (Link).
 
 There are 3 major analyses within the manuscript. The first two involve analysis of the seasonal and latitudinal variation in larval fish abundance and taxa richness using generalised additive mixed-models (GAMMs) and can be found in section 2) and 3) in this script. The third major analyses involves investigation of the community composition of larval fish across the study area, first in relation to Sea Surface Temperature (SST), followed by Latitude (which appears in the supplementary material of the manuscript), and can be found in section 4) of this script. The figures associated with each analysis are at the end of each section, with there figure number as they appear in the manuscript and figure caption.
 
@@ -242,35 +242,37 @@ cor(preds)
 ## Model selection
 ```{r}
 # step 1) Full model
-model1 <-  gam(abundance ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+model1 <-  gam(abundance ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "ML", fit=TRUE,  Select=TRUE)
 
 
-#concurvity(model1, full=T) #checking concurvity
+concurvity(model1, full=T) #checking concurvity
 
 # step 2)  s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  removed due to concurvity
-model2 <-  gam(abundance ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+model2 <-  gam(abundance ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "ML", fit=TRUE,  Select=TRUE)
 
 
 # Step 3) Period removed based on AIC score, checked with chi-sq test
-model2i <-  gam(abundance ~  Season  +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+model2i <-  gam(abundance ~  Season  +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "ML", fit=TRUE,  Select=TRUE)
 
-#AIC(model2,model2i) ## AIC reduced with period removed
+AIC(model2,model2i) ## AIC reduced with period removed
 
-#anova(model2,model2i, test = "Chisq") #non sig therefore can remove period (adds nothing to model)
+anova(model2,model2i, test = "Chisq") #non sig therefore can remove period (adds nothing to model)
 
 
 
 # Step 4) linear Season term removed, but increases AIC and is sig dif in chi-sq test there retain Season in model
-model3 <-  gam(abundance ~  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+model3 <-  gam(abundance ~  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "ML", fit=TRUE,  Select=TRUE)
 
 
-#AIC(model3,model2i) ## AIC increased when season removed. ## model2i best model here. 
+AIC(model3,model2i) ## AIC increased when season removed. ## model2i best model here. 
 
-#anova(model3,model2i, test = "Chisq")  #sig dif therefore dont remove season
+anova(model3,model2i, test = "Chisq")  #sig dif therefore dont remove season
 
 
 ## therefore best model for abundance appears to be model2i, removing Period based on AIC and s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5) based on concurvity.
 
+#Run with method = REML for estimates
+model2i <-  gam(abundance ~  Season  +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
 
 #Best model summary
 summary(model2i) 
@@ -379,33 +381,36 @@ The following section contains code for the analysis of larval fish taxa richnes
 ## Model selection
 ```{r}
 # step 1) Full model
-model1 <-  gam(richness ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+model1 <-  gam(richness ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5) + s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "ML", fit=TRUE,  Select=TRUE)
 
 
 #concurvity(model1, full=T) #checking concurvity
 
 # step 2)  s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5)  removed due to concurvity
-model2 <-  gam(richness ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+model2 <-  gam(richness ~  Season + Period +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "ML", fit=TRUE,  Select=TRUE)
 
 
 # Step 3) Period removed based on AIC score, checked with chi-sq test
-model2i <-  gam(richness ~  Season  +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+model2i <-  gam(richness ~  Season  +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "ML", fit=TRUE,  Select=TRUE)
 
-#AIC(model2,model2i) ## AIC reduced with period removed
+AIC(model2,model2i) ## AIC reduced with period removed
 
 #anova(model2,model2i, test = "Chisq") #non sig therefore can remove period (adds nothing to model)
 
 
 
 # Step 4) linear Season term removed, but increases AIC and is sig dif in chi-sq test there retain Season in model
-model3 <-  gam(richness ~  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
+model3 <-  gam(richness ~  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "ML", fit=TRUE,  Select=TRUE)
 
 
-#AIC(model3,model2i) ## AIC increased when season removed. ## model2i best model here. 
+AIC(model3,model2i) ## AIC increased when season removed. ## model2i best model here. 
 
-#anova(model3,model2i, test = "Chisq")  #sig dif therefore don't remove season
+anova(model3,model2i, test = "Chisq")  #sig dif therefore don't remove season
 
 ## therefore best model for richness appears to be model2i, removing Period based on AIC and s(dists_km, bs =  "cs", k = 5) + s(HadISST, bs =  "cs", k = 5) based on concurvity.
+
+# Run with method = REML for estimates
+model2i <-  gam(richness ~  Season  +  exp(-Bathy)  +  s(stand_depth, bs =  "cs", k = 5)  + s(Latitude, bs =  "fs", xt = "cs", k = 5, by = Season, id = 1) + offset(log(Volume_m3)) + s(Project_name, bs = "re"), data = eastcoast, family = nb(theta = NULL, link = "log"), method = "REML", fit=TRUE,  Select=TRUE)
 
 
 #Best model summary
@@ -792,6 +797,8 @@ p_score2 <- p + theme(legend.position=c(0.15, .8), legend.title = element_text(s
 
 Plotting the GCGM bivariate scores 1 and 2 with Latitude, and quantile regression plots, as per Supplementary Figure 2 in the manuscript.
 
+
+
 ## Supp Figure 2.
 Supplementary Figure 2. A) GCGM bivariate scores 1 and 2. Each point represents an assemblage and the colour of the points represents latitude. B) GCGM bivariate score 1 by latitude and C) GCGM bivariate score 2 by latitude. Blue lines represent 0.05, 0.5 and 0.95 quantiles. n = 2428.
 
@@ -804,8 +811,8 @@ supp_figure_2
 
 Observing difference in community composition of larval fish taxa with latitude before and after 1998 (coinciding with the 1998/99 El Nino event)in the bivariate scores of the GCGM with intercept only MGLM. 
 
-## Supp Figure 3.
-Supplementary Figure 3. A) GCGM bivariate scores 1 and 2. Each point represents an assemblage and the colour of the points represents the ‘Period’, black circles are pre-1998 and orange circles are post-1998. B) GCGM bivariate score 1 by latitude and C) GCGM bivariate score 2 by latitude. Trend lines are fit with a loess smoother. 
+## Figure 5.
+Figure 5. A) GCGM bivariate scores 1 and 2. Each point represents an assemblage and the colour of the points represents the ‘Period’, black circles are pre-1998 and orange circles are post-1998. B) GCGM bivariate score 1 by latitude and C) GCGM bivariate score 2 by latitude. Trend lines are fit with a loess smoother. 
 
 ```{r}
 
