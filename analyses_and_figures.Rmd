@@ -31,7 +31,7 @@ library(vegan)
 library(car)
 library(lubridate)
 library(pracma)
-#install_github('gavinsimpson/gratia')
+#install_github('gavinsimpson/gratia@v0.2-3')
 library(gratia)
 library(lctools)
 library(ggplot2)
@@ -140,15 +140,11 @@ nimo.data$stand_depth[nimo.data$stand_depth  == "0-50"] <- "50"
 
 nimo.data$stand_depth[nimo.data$stand_depth  == "0-80"] <- "80"
 
-# Check -- are the following lines correct?
-
 nimo.data$stand_depth[nimo.data$stand_depth  == "25-50"] <- "75"
 
 nimo.data$stand_depth[nimo.data$stand_depth  == "50-75"] <- "125"
 
 nimo.data$stand_depth[nimo.data$stand_depth  == "75-100"] <- "175"
-
-
 
 nimo.data$stand_depth <- as.factor(nimo.data$stand_depth)
 
@@ -539,7 +535,7 @@ elements <- mvabund(elements[,])
 ```
 
 ## Fitting GCGM with intercept only MGLM 
-```{r}
+```{r, GCGM}
 
 #boxplot(elements) # inspect data ranges
 
@@ -703,11 +699,11 @@ useful_output$dev_exp <- (useful_output$HadISST1/sum(useful_output$HadISST1))*10
 
 
 useful_output <- useful_output %>% 
-  rename(
+  dplyr::rename(
     P = HadISST,
     TS = HadISST1
     ) %>%
-  select(P, TS, dev_exp)
+  dplyr::select(P, TS, dev_exp)
 
 
 
@@ -841,3 +837,10 @@ supp_figure_3 <- plot_grid(p1, p2, p3, labels = c('A', 'B', 'C'), label_size = 1
 
 supp_figure_3
 ```
+
+## Ssssion Info
+
+```{r}
+devtools::session_info()
+```
+

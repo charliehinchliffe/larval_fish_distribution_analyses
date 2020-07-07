@@ -35,8 +35,8 @@ Depends:
     tidyverse,
     vegan
 Remotes: 
-    gordy2x/ecoCopula,
-    gavinsimpson/gratia
+    gordy2x/ecoCopula@ea048e1,
+    gavinsimpson/gratia@v0.2-3
 Encoding: UTF-8
 Language: en
 LazyData: true
