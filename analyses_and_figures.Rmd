@@ -838,7 +838,7 @@ supp_figure_3 <- plot_grid(p1, p2, p3, labels = c('A', 'B', 'C'), label_size = 1
 supp_figure_3
 ```
 
-## Ssssion Info
+## Session Info
 
 ```{r}
 devtools::session_info()
