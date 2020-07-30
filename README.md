@@ -10,7 +10,7 @@ This repository contains all the data and code used in the manuscript:
 * doi: XXXX
 
 
-The main script, `analyses_and_figures.rmd` contains code to reproduce the all but one analysis, and all figures, from the paper. The other script `manyglm_uni_test.R` contains code for running univariate tests on the larval fish community with SST using a multivariate genralized linear model (MGLM) which were originally run on the University of New South Wales computational cluster 'Katana' supported by Research Technology Services. The output from this is saved in the repository as `outputs/Uni_test_manyglm_output.rds` and can be imported and observed directly whe running `analyses_and_figures.Rmd`.
+The main script, `analyses_and_figures.rmd` contains code to reproduce the all but one analysis, and all figures (excluding the site map), from the paper. The other script `manyglm_uni_test.R` contains code for running univariate tests on the larval fish community with SST using a multivariate genralized linear model (MGLM) which were originally run on the University of New South Wales computational cluster 'Katana' supported by Research Technology Services. The output from this is saved in the repository as `outputs/Uni_test_manyglm_output.rds` and can be imported and observed directly whe running `analyses_and_figures.Rmd`.
 
 There are 3 major analyses within the manuscript. The first two involve analysis of the seasonal and latitudinal variation in larval fish abundance and taxa richness using generalised additive mixed-models (GAMMs) and can be found in section 2) and 3) in the main script. The third major analyses involves investigation of the community composition of larval fish across the study area, first in relation to Sea Surface Temperature (SST), followed by Latitude (which appears in the supplementary material of the manuscript), and can be found in section 4) of the script. The figures associated with each analysis are at the end of each section, with there figure number as they appear in the manuscript and figure caption.
 
@@ -57,7 +57,7 @@ The code above initialises a docker container, which runs an rstudio session, wh
 
 Note, this container does not contain the actual github repo, only the software environment. If you run the above command from within your downloaded repo, it will map the working directory as the current working directory inside the docker container.
 
-Also, not you may need to increase the memory accessible to dockerto get all coponnets to run.
+Also, note you may need to increase the memory accessible to dockerto get all coponnets to run.
 
 ### Building the docker images (optional)
 
