@@ -2,12 +2,13 @@
 
 This repository contains all the data and code used in the manuscript:
 
-* Title: "Larval fish distribution in a changing western boundary current"
+* Title: "Modelling the distribution of larval fish in a western
+boundary current using a multi-voyage database"
 * Authors: Charles Hinchliffe, James A. Smith, Jason D. Everett, Daniel S. Falster, Ana Lara-Lopez,
  Anthony G. Miskiewicz, Anthony J. Richardson, Hayden T. Schilling, Iain M. Suthers
-* Year of publication: published
-* Journal: XXXX
-* doi: XXXX
+* Year of publication: 2021
+* Journal: Reviews in Fish Biology and Fisheries
+* doi: https://doi.org/10.1007/s11160-021-09647-x
 
 
 The main script, `analyses_and_figures.rmd` contains code to reproduce the all but one analysis, and all figures (excluding the site map), from the paper. The other script `manyglm_uni_test.R` contains code for running univariate tests on the larval fish community with SST using a multivariate genralized linear model (MGLM) which were originally run on the University of New South Wales computational cluster 'Katana' supported by Research Technology Services. The output from this is saved in the repository as `outputs/Uni_test_manyglm_output.rds` and can be imported and observed directly whe running `analyses_and_figures.Rmd`.

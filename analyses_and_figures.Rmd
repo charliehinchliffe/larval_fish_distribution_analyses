@@ -499,7 +499,7 @@ figure_3
 
 # 4) Multivariate Analyses
 
-This section of the scripts uses an intercept-only multivariate generalised linear model (MGLM) model of the larval fish community in a Gaussian copula graphical model (GCGM), and quantile regression of the , to observe the effects of temperature (Figure 4), latitude (Supplementary Figure 2) and time period (Supplementary Figure 3).  
+This section of the scripts uses an intercept-only multivariate generalised linear model (MGLM) model of the larval fish community in a Gaussian copula graphical model (GCGM), and quantile regression of the , to observe the effects of temperature (Figure 4) and latitude (Supplementary Figure 2).
 
 Select inshore species in matrix to analyse
 ```{r}
@@ -785,7 +785,6 @@ p_score2 <- p + theme(legend.position=c(0.15, .8), legend.title = element_text(s
 Plotting the GCGM bivariate scores 1 and 2 with Latitude, and quantile regression plots, as per Supplementary Figure 2 in the manuscript.
 
 
-
 ## Supp Figure 2.
 Supplementary Figure 2. A) GCGM bivariate scores 1 and 2. Each point represents an assemblage and the colour of the points represents latitude. B) GCGM bivariate score 1 by latitude and C) GCGM bivariate score 2 by latitude. Blue lines represent 0.05, 0.5 and 0.95 quantiles. n = 2428.
 
@@ -796,47 +795,6 @@ supp_figure_2
 ```
 
 
-Observing difference in community composition of larval fish taxa with latitude before and after 1998 (coinciding with the 1998/99 El Nino event)in the bivariate scores of the GCGM with intercept only MGLM. 
-
-## Figure 5.
-Figure 5. A) GCGM bivariate scores 1 and 2. Each point represents an assemblage and the colour of the points represents the ‘Period’, black circles are pre-1998 and orange circles are post-1998. B) GCGM bivariate score 1 by latitude and C) GCGM bivariate score 2 by latitude. Trend lines are fit with a loess smoother. 
-
-```{r}
-
-my_cols <- c("#E69F00", "#000000")
-
-p1<- ggplot(plot_dat,aes(x=score_1,y=score_2))+
-  geom_point(aes(color = inshore.Period), size = 4, alpha = 0.5) + 
-  scale_color_manual(values = my_cols) +
-  theme_classic() +
-  theme(legend.position=c(0.85, .9), legend.title = element_text(size=10, face="bold"),
-               legend.text = element_text(size = 10, face = "bold"))
-  
-#p1
-
-p2 <- ggplot(plot_dat,aes(x=inshore.Latitude, y=score_1, col=inshore.Period))+
-   geom_point(aes(color = inshore.Period), size = 4, alpha = 0.5,  shape = 1) + 
-  scale_color_manual(values = my_cols) +
-  theme_classic() +
-  xlab("Latitude (°C)") +
-  theme(legend.position="none") +
-  geom_smooth(method = "loess")
-
-
-p3 <-  ggplot(plot_dat,aes(x=inshore.Latitude, y=score_2, col=inshore.Period))+
-  geom_point(aes(color = inshore.Period), size = 4, alpha = 0.5,  shape = 1) + 
-  scale_color_manual(values = my_cols) +
-  theme_classic() +
-  xlab("Latitude (°C)") +
-  theme(legend.position="none") +
-  geom_smooth(method = "loess")
-
-
-
-supp_figure_3 <- plot_grid(p1, p2, p3, labels = c('A', 'B', 'C'), label_size = 12, nrow = 1, ncol = 3)
-
-supp_figure_3
-```
 
 ## Session Info
 
