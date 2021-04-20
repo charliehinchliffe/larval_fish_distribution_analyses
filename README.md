@@ -1,4 +1,4 @@
-# Larval fish seasonality in a changing western boundary current
+# Modelling the distribution of larval fish in a western boundary current using a multi-voyage database
 
 This repository contains all the data and code used in the manuscript:
 
